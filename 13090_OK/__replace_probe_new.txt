@@ -1,0 +1,14 @@
+  async function probeBase(base, ms){
+    try{
+      console.log('probeBase: probing', base, 'ms=', ms);
+      // v1305：首頁探測改回與標準版相同的 /status 方式，避免 AP 下過度嚴苛的 probe 導致判不到設備。
+      const res = await fetchWithTimeout(base + '/status?_=' + Date.now(), {cache:'no-store'}, ms);
+      if(!res || !res.ok){ console.warn('probeBase: bad response', base, res && res.status); return false; }
+      rememberBase(base);
+      console.log('probeBase: ok', base);
+      return true;
+    }catch(e){
+      console.warn('probeBase error', base, e);
+      return false;
+    }
+  }

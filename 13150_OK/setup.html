@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2aa6bf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
+<title>HMK 連線狀態</title>
+<style>
+  :root{
+    --top:#279bb3;
+    --top2:#32acc5;
+    --line:rgba(255,255,255,.45);
+  }
+  *{box-sizing:border-box}
+  button,a,input,select,textarea{touch-action:manipulation}
+  html,body{
+    margin:0;
+    height:100%;
+    font-family:"Noto Sans TC",system-ui,sans-serif;
+    background:var(--top);
+    overflow:hidden;
+  }
+  body{color:#fff;overscroll-behavior:none}
+  .app{
+    height:100dvh;
+    overflow:hidden;
+    background:linear-gradient(180deg,var(--top2) 0 32%,#f3f3f1 32% 100%);
+  }
+  .top{
+    max-width:430px;
+    margin:0 auto;
+    padding:env(safe-area-inset-top,0) 0 0;
+  }
+  .header{
+    height:66px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    border-bottom:1px solid var(--line);
+    padding:0 16px;
+  }
+  .backBtn{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border:0;
+    background:transparent;
+    color:#e8f6fb;
+    font-size:16px;
+    padding:8px 6px;
+    cursor:pointer;
+  }
+  .backBtn svg{
+    width:26px;
+    height:26px;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:2.2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .brand{font-size:40px;font-weight:900;letter-spacing:.02em;line-height:1}
+
+  .frameHost{
+    max-width:430px;
+    margin:0 auto;
+    height:calc(100dvh - env(safe-area-inset-top,0) - 66px);
+    position:relative;
+    background:#fff;
+    overflow:hidden;
+  }
+  .nativeFrame{
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
+    background:#fff;
+  }
+  .loading{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+    color:#5f8b95;
+    font-size:14px;
+    z-index:2;
+  }
+  .frameHost.ready .loading{display:none}
+
+  @media (min-width:480px){
+    .app{display:flex;flex-direction:column;align-items:center}
+    .top,.frameHost{width:430px}
+    .top{border-top-left-radius:18px;border-top-right-radius:18px;margin-top:10px}
+    .frameHost{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="header">
+      <button id="backBtn" class="backBtn" type="button" aria-label="返回首頁">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        <span>連線狀態</span>
+      </button>
+      <div class="brand" aria-label="HMK">HMK</div>
+    </div>
+  </div>
+
+  <div id="frameHost" class="frameHost">
+    <div class="loading">載入設備設定頁中...</div>
+    <iframe id="nativeFrame" class="nativeFrame" title="設備設定"></iframe>
+  </div>
+</div>
+
+<script>
+(function(){
+  const AP_BASE = 'http://192.168.4.1';
+  let lastResolvedBase = '';
+
+  const $ = s => document.querySelector(s);
+
+  function saveIp(ip){
+    if(ip === '') { localStorage.removeItem('hmk_ip'); return; }
+    if(ip) localStorage.setItem('hmk_ip', ip);
+  }
+
+  function getIp(){ return localStorage.getItem('hmk_ip') || ''; }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    return String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = b => { if(b && !out.includes(b)) out.push(b); };
+
+    const ip = normalizeHost(getIp());
+    let currentHost = '';
+    try{ currentHost = normalizeHost(location.hostname || ''); }catch(e){}
+
+    const currentBase = (currentHost && /^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+    const ipBase = (ip && ip !== '192.168.4.1') ? ('http://' + ip) : '';
+
+    add(currentBase);
+    if(lastResolvedBase && lastResolvedBase !== currentBase) add(lastResolvedBase);
+    if(ipBase && ipBase !== currentBase && ipBase !== lastResolvedBase) add(ipBase);
+    add(AP_BASE);
+    return out;
+  }
+
+  async function fetchWithTimeout(url, options, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  async function resolveWorkingBase(){
+    const bases = candidateBases();
+    for(const base of bases){
+      const timeoutMs = (base === AP_BASE) ? 700 : 1000;
+      try{
+        const r = await fetchWithTimeout(base + '/ping?ts=' + Date.now(), { cache:'no-store' }, timeoutMs);
+        if(!r.ok) continue;
+        lastResolvedBase = base;
+        try{
+          const u = new URL(base);
+          if(u.hostname && u.hostname !== '192.168.4.1') saveIp(u.hostname);
+        }catch(e){}
+        return base;
+      }catch(e){}
+    }
+    return AP_BASE;
+  }
+
+  async function openNativeSetup(){
+    const host = $('#frameHost');
+    const frame = $('#nativeFrame');
+    if(!host || !frame) return;
+
+    host.classList.remove('ready');
+    let loaded = false;
+    frame.onload = () => {
+      loaded = true;
+      host.classList.add('ready');
+    };
+
+    // 先秒開 AP 內頁，避免等待 ping 探測造成白屏感。
+    let activeBase = AP_BASE;
+    frame.src = activeBase + '/setup?ts=' + Date.now();
+
+    // 背景探測可用 base，若找到更好的再切換一次。
+    resolveWorkingBase().then((resolvedBase) => {
+      if(!resolvedBase || resolvedBase === activeBase) return;
+      activeBase = resolvedBase;
+      if(loaded) return;
+      frame.src = activeBase + '/setup?ts=' + Date.now();
+    }).catch(() => {});
+
+    // 若網路慢導致沒 onload，再補一次重載。
+    setTimeout(() => {
+      if(host.classList.contains('ready')) return;
+      frame.src = activeBase + '/setup?retry=' + Date.now();
+    }, 1200);
+
+    // 若 iframe 仍無法顯示（例如設備端阻擋內嵌），改為直接開啟設備設定頁。
+    setTimeout(() => {
+      if(host.classList.contains('ready')) return;
+      location.href = activeBase + '/setup?direct=' + Date.now();
+    }, 2600);
+  }
+
+  $('#backBtn')?.addEventListener('click', () => {
+    location.href = './index.html';
+  });
+
+  window.addEventListener('message', (e) => {
+    const s = String(e.data || '');
+    const origin = String(e.origin || '');
+    const originAllowed = (origin === window.origin) || /^https?:\/\/192\.168\.\d+\.\d+(?::\d+)?$/.test(origin);
+    if(!originAllowed) return;
+
+    const m = s.match(/^saveip:([\d.]*)$/);
+    if(m){
+      const ip = m[1] || '';
+      if(ip) saveIp(ip);
+      setTimeout(() => { location.href = './index.html'; }, 650);
+    }
+  });
+
+  openNativeSetup();
+})();
+</script>
+</body>
+</html>

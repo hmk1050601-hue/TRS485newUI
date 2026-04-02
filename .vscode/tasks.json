@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "get-latest-commit-msg",
+      "type": "shell",
+      "command": "git log -1 --pretty=%B | Out-File -FilePath .latest_commit_msg.txt -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "bump-version-auto",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "bump-version.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "git-add",
+      "type": "shell",
+      "command": "git add .",
+      "problemMatcher": []
+    },
+    {
+      "label": "git-commit-auto",
+      "type": "shell",
+      "command": "git commit --amend --no-edit",
+      "problemMatcher": []
+    },
+    {
+      "label": "git-push",
+      "type": "shell",
+      "command": "git push --force",
+      "problemMatcher": []
+    },
+    {
+      "label": "verify-upload",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$local = git rev-parse HEAD; git fetch origin main | Out-Null; $remote = git rev-parse origin/main; if ($local -eq $remote) { Write-Output 'upload ok' } else { Write-Error \"upload failed: local=$local remote=$remote\"; exit 1 }"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "version-bump-and-upload",
+      "dependsOn": [
+        "get-latest-commit-msg",
+        "bump-version-auto",
+        "git-add",
+        "git-commit-auto",
+        "git-push",
+        "verify-upload"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    }
+  ]
+}

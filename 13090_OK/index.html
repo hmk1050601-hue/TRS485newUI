@@ -1,0 +1,877 @@
+<!--
+ HMK PWA Shell · v11 首頁新樣式
+ 依首頁需求改版：
+ 1. 首頁顯示名稱可編輯（localStorage）
+ 2. 連線狀態顯示 AP / 家用網路
+ 3. 首頁顯示目前模式（自動 / 定時 / 關閉）
+ 4. 首頁電費累計改顯示當月
+ 5. 顯示設定水溫
+ 6. 顯示實際水溫
+ 7. 遙控器 → 控制頁
+ 8. 時間設定 → 排程設定
+ 9. 產品狀態 → 設備狀態
+10. 連線狀態 → Wi-Fi 設定頁
+11. 聯繫客服 → mailto:service@homemark.com.tw
+-->
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+  <script>
+  (function(){
+    function applyVersionUi(appName, ver){
+      document.querySelectorAll('.hmk-version').forEach(e => e.textContent = ver || '');
+      document.title = (appName || 'HMK 無線系統') + ' · Home';
+      const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if(appleTitle) appleTitle.setAttribute('content', appName || 'HMK');
+    }
+
+    try{
+      const storedName = localStorage.getItem('hmk_pwa_name') || '';
+      const storedVer  = localStorage.getItem('hmk_pwa_version') || '';
+      if(storedName || storedVer){
+        document.addEventListener('DOMContentLoaded', function(){
+          applyVersionUi(storedName, storedVer);
+        });
+      }
+    }catch(e){}
+
+    const s = document.createElement('script');
+    s.src = './version.js?v=' + Date.now();
+    s.async = true;
+    s.onload = function(){
+      const appName = window.HMK_APP_NAME || '';
+      const ver = window.HMK_VERSION || '';
+      try{
+        localStorage.setItem('hmk_pwa_name', appName || '');
+        localStorage.setItem('hmk_pwa_version', ver || '');
+      }catch(e){}
+      applyVersionUi(appName, ver);
+    };
+    s.onerror = function(){ console.warn('version.js load failed'); };
+    document.head.appendChild(s);
+  })();
+  </script>
+
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="HMK">
+  <title>HMK 無線系統</title>
+  <meta name="theme-color" content="#1d9fbd">
+  <meta property="og:title" content="HMK 無線控制系統">
+  <meta property="og:description" content="HMK 智能無線控制 — 新首頁">
+  <meta property="og:image" content="hmk-preview.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content=".">
+
+  <style>
+    :root{
+      --top:#1d9fbd;
+      --top2:#2ba8c6;
+      --cream:#f5e3a5;
+      --shadow:0 10px 26px rgba(0,0,0,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;font-family:"Noto Sans TC",system-ui,sans-serif;background:var(--top)}
+    body{color:#fff}
+    .app{min-height:100vh;background:linear-gradient(180deg,var(--top2) 0 47%,#f2f2f2 47% 100%)}
+    .top{
+      background:var(--top2);
+      padding:env(safe-area-inset-top,0) 0 0;
+      min-height:45vh;
+      position:relative;
+      overflow:hidden;
+    }
+    .header{
+      height:66px;display:flex;align-items:center;justify-content:center;position:relative;
+      border-bottom:1px solid rgba(255,255,255,.45);padding:0 16px;
+    }
+    .brandWrap{display:flex;align-items:center;justify-content:center;gap:0}
+    .logoMark{
+      position:relative;width:42px;height:28px;display:inline-block;flex:0 0 auto;
+    }
+    .logoMark .bar{
+      position:absolute;left:0;top:3px;width:6px;height:22px;background:#fff;border-radius:4px;
+    }
+    .logoMark .curve{
+      position:absolute;left:6px;top:8px;width:16px;height:14px;border:4px solid #fff;border-top:0;
+      border-right:0;border-radius:0 0 0 12px;
+    }
+    .logoMark .dot{
+      position:absolute;left:18px;top:10px;width:8px;height:8px;background:#fff;border-radius:50%;
+    }
+    .brand{font-size:40px;font-weight:900;letter-spacing:.02em;line-height:1}
+
+    .hero{padding:6px 20px 8px;max-width:430px;margin:0 auto}
+    .networkRow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-top:2px;color:#fff;text-align:center}
+    .pill{
+      background:rgba(255,255,255,.9);color:#7c8b95;border-radius:999px;padding:3px 14px;
+      font-size:16px;line-height:1.2;display:inline-block;
+    }
+    .networkText{font-size:22px;opacity:.98;min-height:1.2em}
+    .circles{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+    .circle{
+      width:100%;aspect-ratio:1/1;border:1.4px solid rgba(255,255,255,.65);border-radius:50%;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;
+    }
+    .circle .small{font-size:19px;opacity:.95;margin-bottom:10px}
+    .circle .value{color:var(--cream);font-size:40px;font-weight:900;line-height:1.05;letter-spacing:.02em}
+    .circle .sub{font-size:18px;color:rgba(255,255,255,.95);margin-top:10px}
+    .modeIcon{font-size:44px;line-height:1;margin-top:12px;color:rgba(255,255,255,.95)}
+
+    .bottom{
+      max-width:430px;margin:-28px auto 0;background:#f2f2f2;color:#999;border-top-left-radius:18px;
+      border-top-right-radius:18px;min-height:53vh;box-shadow:0 -8px 24px rgba(0,0,0,.05);
+      padding:12px 16px calc(10px + env(safe-area-inset-bottom,0));position:relative;
+    }
+    .temps{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:10px}
+    .tempCard{text-align:center;padding-top:2px}
+    .tempLabel{font-size:19px;color:#b3b4b8;margin-bottom:6px}
+    .tempValue{color:#adadb1;font-weight:900;font-size:58px;line-height:1;letter-spacing:-.04em}
+    .tempValue .unit{font-size:.44em;margin-left:2px}
+    .tempLine{margin:10px auto 0;width:86%;height:1px;background:#7ac4d9;opacity:.8}
+
+    .grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #acd7e3;
+      border-bottom:1px solid transparent;margin-top:8px;
+    }
+    .tile{
+      background:transparent;border:0;border-bottom:1px solid #acd7e3;color:#92a0a7;
+      min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:8px;cursor:pointer;padding:12px 8px;font-size:17px;
+    }
+    .tile:nth-child(odd){border-right:1px solid #acd7e3}
+    .tileIcon{
+      color:var(--top2);line-height:1;display:flex;align-items:center;justify-content:center;min-height:44px;
+    }
+    .tile svg{
+      width:52px;height:52px;stroke:currentColor;fill:none;stroke-width:1.9;
+      stroke-linecap:round;stroke-linejoin:round;
+    }
+    .tileLabel{color:#9ea7ad;font-size:17px}
+    .serviceWrap{display:flex;justify-content:center;margin-top:4px}
+    .serviceBtn{
+      border:0;border-radius:999px;background:var(--top2);color:#fff;padding:6px 18px;font-size:17px;
+      cursor:pointer;box-shadow:var(--shadow);
+    }
+
+    .hintBar{max-width:430px;margin:0 auto;padding:10px 16px 0;display:none}
+    .hintBar.show{
+      display:block;position:fixed;left:50%;top:calc(env(safe-area-inset-top,0) + 8px);transform:translateX(-50%);
+      width:min(430px,calc(100% - 16px));z-index:1100;padding:0;
+    }
+    .hintInner{
+      background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:14px;color:#fff;
+      padding:10px 12px;font-size:13px;line-height:1.55;
+    }
+    .hintInner button{
+      margin-top:8px;width:100%;border:0;border-radius:999px;padding:8px 0;background:#ffd84d;
+      color:#333;font-weight:700;cursor:pointer;
+    }
+
+    .ver{
+      text-align:center;color:#9ea7ad;font-size:11px;letter-spacing:.08em;padding:0;margin-top:2px;
+    }
+    .badge{text-align:center;color:#9ea7ad;font-size:11px;letter-spacing:.16em;padding:2px 0 0;margin-top:2px}
+    #frameWrap{display:none;position:fixed;inset:0;z-index:999;background:#000}
+    #hmkFrame{border:0;width:100%;height:100%}
+
+    #firstHintMask{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);
+      z-index:1200;padding:16px;
+    }
+    #firstHintBox{
+      position:relative;width:min(92%,360px);padding:24px 20px 20px;border-radius:22px;background:#fff;
+      box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center;color:#123;
+    }
+    #firstHintBadge{
+      display:inline-flex;align-items:center;justify-content:center;font-size:11px;letter-spacing:.16em;
+      text-transform:uppercase;color:#0a3ea0;background:rgba(24,119,242,.08);padding:4px 10px;
+      border-radius:999px;margin-bottom:6px;
+    }
+    #firstHintIcon{font-size:32px;margin:6px 0 4px}
+    #firstHintTitle{font-size:20px;font-weight:800;color:#0a3ea0;margin:4px 0 10px}
+    #firstHintBody{font-size:15px;line-height:1.7;white-space:pre-line;color:#234}
+    #firstHintBody strong{color:#0a3ea0}
+    #firstHintBtn{
+      margin-top:18px;min-width:150px;border:0;border-radius:999px;padding:10px 24px;font-size:15px;
+      font-weight:700;background:linear-gradient(135deg,#1877f2,#0a3ea0);color:#fff;cursor:pointer;
+    }
+    #firstHintClose{position:absolute;top:8px;right:10px;font-size:18px;color:#789;cursor:pointer}
+
+    @media (min-width:480px){
+      .app{display:flex;flex-direction:column;align-items:center}
+      .top,.bottom,.hintBar{width:430px}
+      .top{border-top-left-radius:18px;border-top-right-radius:18px;margin-top:10px}
+      .bottom{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+      .badge{width:430px}
+    }
+  </style>
+</head>
+<body>
+  <div id="frameWrap"><iframe id="hmkFrame"></iframe></div>
+
+  <div class="app">
+    <div class="top">
+      <div class="header">
+        <div class="brandWrap" aria-label="HMK">
+          <div class="brand">HMK</div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="networkRow">
+          <span class="pill">連線狀態</span>
+          <span id="networkText" class="networkText">連線產品中</span>
+        </div>
+
+        <div class="circles">
+          <div class="circle">
+            <div class="small">熱水器</div>
+            <div id="modeValue" class="value">--</div>
+            <div id="modeIcon" class="modeIcon">◌</div>
+          </div>
+
+          <div class="circle">
+            <div class="small">電費累計</div>
+            <div id="costValue" class="value">--</div>
+            <div class="sub">元</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="installRow" class="hintBar">
+      <div class="hintInner">
+        建議先將此頁加入主畫面，之後操作會更像 App。
+        <button id="installBtn" type="button">安裝（v <span class="hmk-version"></span>）</button>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="temps">
+        <div class="tempCard">
+          <div class="tempLabel">設定水溫</div>
+          <div id="setTemp" class="tempValue">--<span class="unit">°C</span></div>
+          <div class="tempLine"></div>
+        </div>
+        <div class="tempCard">
+          <div class="tempLabel">實際水溫</div>
+          <div id="realTemp" class="tempValue">--<span class="unit">°C</span></div>
+          <div class="tempLine"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <button id="controlBtn" type="button" class="tile">
+          <div class="tileIcon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="4" y1="6" x2="20" y2="6"></line>
+              <line x1="4" y1="12" x2="20" y2="12"></line>
+              <line x1="4" y1="18" x2="20" y2="18"></line>
+              <circle cx="9" cy="6" r="2"></circle>
+              <circle cx="15" cy="12" r="2"></circle>
+              <circle cx="11" cy="18" r="2"></circle>
+            </svg>
+          </div>
+          <div class="tileLabel">遙控器</div>
+        </button>
+
+        <button id="scheduleBtn" type="button" class="tile">
+          <div class="tileIcon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 7v6l4 2"></path>
+              <path d="M20 12a8 8 0 1 1-3-6.2"></path>
+              <path d="M20 4v4h-4"></path>
+            </svg>
+          </div>
+          <div class="tileLabel">時間設定</div>
+        </button>
+
+        <button id="statusBtn" type="button" class="tile">
+          <div class="tileIcon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8"></circle>
+              <path d="M12 7l-3 5h3l-1 5 4-6h-3l1-4z"></path>
+            </svg>
+          </div>
+          <div class="tileLabel">產品狀態</div>
+        </button>
+
+        <button id="setupBtn" type="button" class="tile">
+          <div class="tileIcon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 9a16 16 0 0 1 16 0"></path>
+              <path d="M7 13a10.5 10.5 0 0 1 10 0"></path>
+              <path d="M10.5 17a4.8 4.8 0 0 1 3 0"></path>
+              <circle cx="12" cy="20" r="1.2" fill="currentColor" stroke="none"></circle>
+            </svg>
+          </div>
+          <div class="tileLabel">連線狀態</div>
+        </button>
+      </div>
+
+      <div class="serviceWrap">
+        <button id="serviceBtn" type="button" class="serviceBtn">✉ 聯繫客服</button>
+      </div>
+
+      <div class="badge">HOMEMARK CO.,LTD.</div>
+      <div class="ver">v<span class="hmk-version"></span></div>
+    </div>
+  </div>
+
+
+  <div id="firstHintMask">
+    <div id="firstHintBox">
+      <div id="firstHintClose">×</div>
+      <div id="firstHintBadge">FIRST&nbsp;SETUP</div>
+      <div id="firstHintIcon">📶</div>
+      <div id="firstHintTitle">偵測到第一次安裝</div>
+      <div id="firstHintBody">
+        請先打開手機的 Wi-Fi，並連線到
+        <strong>HMK-Setup-xxxx</strong>。<br><br>
+        連線完成後，請關閉本程式再重新開啟一次，<br>
+        才能繼續設定裝置。
+      </div>
+      <button id="firstHintBtn" type="button">了解了，稍後去設定</button>
+    </div>
+  </div>
+
+  <script>
+  const $ = s => document.querySelector(s);
+  const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  let deferredPrompt = null;
+  let lastResolvedBase = '';
+  let homeTimer = null;
+
+  function saveIp(ip){
+    if (ip === '') { localStorage.removeItem('hmk_ip'); return; }
+    if (ip) localStorage.setItem('hmk_ip', ip);
+  }
+  function getIp(){ return localStorage.getItem('hmk_ip') || ''; }
+
+  const HOTSPOT_NAME_KEY = 'hmk_hotspot_name_display';
+
+  function getHotspotName(){
+    return (localStorage.getItem(HOTSPOT_NAME_KEY) || '').trim() || 'HMK-Setup';
+  }
+  function renderHotspotName(){
+    const el = $('#hotspotName');
+    if (el) el.textContent = getHotspotName();
+  }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    s = String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+    return s;
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = (b)=>{ if(b && !out.includes(b)) out.push(b); };
+
+    const apBase = 'http://192.168.4.1';
+
+    let currentHost = '';
+    try{
+      currentHost = normalizeHost(location.hostname || '');
+    }catch(e){}
+
+    const currentBase = (/^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+
+    if (currentBase && currentHost !== '192.168.4.1') add(currentBase);
+    if (lastResolvedBase && lastResolvedBase !== apBase) add(lastResolvedBase);
+
+    const ip = normalizeHost(getIp());
+    if (ip && ip !== '192.168.4.1') add('http://' + ip);
+
+    if (currentBase === apBase) add(apBase);
+    add(apBase);
+
+    return out;
+  }
+
+  async function fetchWithTimeout(url, options, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, options || {}, {signal: ctrl.signal}));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  function rememberBase(base){
+    if(!base) return;
+    lastResolvedBase = base;
+    try{
+      const u = new URL(base);
+      const host = u.hostname;
+      if(host && host !== '192.168.4.1'){
+        saveIp(host);
+      }
+    }catch(e){}
+  }
+
+  async function probeBase(base, ms){
+    try{
+      // v1305：首頁探測改回與標準版相同的 /status 方式，避免 AP 下過度嚴苛的 probe 導致判不到設備。
+      const res = await fetchWithTimeout(base + '/status?_=' + Date.now(), {cache:'no-store'}, ms);
+      if(!res || !res.ok) return false;
+      rememberBase(base);
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  async function resolveWorkingBase(){
+    const bases = candidateBases();
+    for(const base of bases){
+      // v1305：AP timeout 恢復到標準版等級，避免 AP 模式下首頁探測過短而判失敗。
+      const ms = (base === 'http://192.168.4.1') ? 900 : 700;
+      if(await probeBase(base, ms)) return base;
+    }
+    return '';
+  }
+
+  async function fetchFromBase(base, path, options, ms){
+    if(!base) throw new Error('no base');
+    const timeoutMs = (ms != null) ? ms : ((base === 'http://192.168.4.1') ? 900 : 1600);
+    const res = await fetchWithTimeout(base + path, options || {}, timeoutMs);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    rememberBase(base);
+    return {res, base};
+  }
+
+  async function smartFetch(path, options){
+    const base = await resolveWorkingBase();
+    if(!base) throw new Error('fetch failed');
+    return fetchFromBase(base, path, options);
+  }
+
+  function setNetworkTextByBase(base){
+    const el = $('#networkText');
+    if(!el) return;
+    if(base === 'http://192.168.4.1' || location.hostname === '192.168.4.1'){
+      el.textContent = '連線產品中';
+    }else if(base){
+      el.textContent = '連線家用網路';
+    }else{
+      el.textContent = '離線中';
+    }
+  }
+
+  function modeText(m){
+    if (Number(m) === 1) return '自動';
+    if (Number(m) === 2) return '定時';
+    if (Number(m) === 0) return '關閉';
+    return '--';
+  }
+  function isHeatingOn(heat, heatValid){
+    if (heatValid != null && Number(heatValid) === 0) return false;
+    if (heat === true) return true;
+    if (typeof heat === 'string'){
+      const s = heat.trim().toLowerCase();
+      if (s === '1' || s === 'true' || s === 'on') return true;
+      if (s === '0' || s === 'false' || s === 'off') return false;
+    }
+    return Number(heat) === 1;
+  }
+
+  function modeIcon(m, heat, heatValid){
+    if (Number(m) === 0) return '💤';
+    if (Number(m) === 1 || Number(m) === 2){
+      return isHeatingOn(heat, heatValid) ? '🔥' : '💤';
+    }
+    return '◌';
+  }
+
+  function setModeUi(m, heat, heatValid){
+    $('#modeValue').textContent = modeText(m);
+    $('#modeIcon').textContent = modeIcon(m, heat, heatValid);
+  }
+
+  function setTempText(id, v){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const n = Number(v);
+    el.innerHTML = (isFinite(n) ? Math.round(n) : '--') + '<span class="unit">°C</span>';
+  }
+
+  function fmtMoney(n){
+    const x = Number(n);
+    if(!isFinite(x)) return '--';
+    if (Math.abs(x) >= 100) return String(Math.round(x));
+    return x.toFixed(1);
+  }
+
+  function getPowerKw(){
+    const mode = localStorage.getItem('pl_pwr') || '';
+    if (mode === 'custom'){
+      const x = parseFloat(localStorage.getItem('pl_pwr_custom') || '');
+      return (isFinite(x) && x > 0) ? x : 4;
+    }
+    const k = parseFloat(mode);
+    return (isFinite(k) && k > 0) ? k : 4;
+  }
+
+  function getRate(){
+    const r = parseFloat(localStorage.getItem('pl_rate') || '');
+    return (isFinite(r) && r >= 0) ? r : 1.68;
+  }
+
+  function getCurrentMonthSec(g){
+    if(!g) return 0;
+    const months = Array.isArray(g.months) ? g.months :
+                  (Array.isArray(g.monthSec) ? g.monthSec :
+                  (Array.isArray(g.monthSecs) ? g.monthSecs : []));
+    if(!months.length) return 0;
+
+    if (g.validDate && isFinite(Number(g.baseYM))){
+      const ym = Number(g.y || 0) * 12 + (Number(g.mo || 1) - 1);
+      const idx = ym - Number(g.baseYM);
+      if (idx >= 0 && idx < months.length){
+        return Number(months[idx] || 0);
+      }
+    }
+    return Number(months[months.length - 1] || 0);
+  }
+
+  function setCostUi(sec){
+    const h = (Number(sec) || 0) / 3600;
+    const cost = h * getPowerKw() * getRate();
+    $('#costValue').textContent = fmtMoney(cost);
+  }
+
+  async function autoFetchIpFromAp(){
+    if(getIp()) return;
+    try{
+      const controller = new AbortController();
+      const t = setTimeout(()=>controller.abort(), 1200);
+      const res = await fetch('http://192.168.4.1/api/myip', {cache:'no-store', signal:controller.signal});
+      clearTimeout(t);
+      if(!res.ok) return;
+      const j = await res.json().catch(()=>null);
+      if(!j || !j.ok || !j.ip) return;
+      saveIp(String(j.ip).trim());
+    }catch(e){
+      console.warn('autoFetchIpFromAp failed:', e);
+    }
+  }
+
+  async function autoSyncTimeOnce(){
+    const bases = candidateBases();
+    if(!bases.length) return;
+
+    try{
+      const d = new Date();
+      const h = d.getHours();
+      const m = d.getMinutes();
+      let wd = d.getDay();
+      wd = (wd === 0) ? 7 : wd;
+      const y = d.getFullYear();
+      const mo = d.getMonth() + 1;
+      const da = d.getDate();
+
+      for(const base of bases){
+        try{
+          await fetchWithTimeout(base + '/api/time', {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:
+              'h=' + encodeURIComponent(h) +
+              '&m=' + encodeURIComponent(m) +
+              '&wd=' + encodeURIComponent(wd) +
+              '&y=' + encodeURIComponent(y) +
+              '&mo=' + encodeURIComponent(mo) +
+              '&d=' + encodeURIComponent(da)
+          }, base === 'http://192.168.4.1' ? 900 : 2400);
+          break;
+        }catch(err){}
+      }
+    }catch(e){
+      console.warn('autoSyncTimeOnce failed:', e);
+    }
+  }
+
+  async function refreshHomeData(){
+    let base = '';
+    try{
+      base = await resolveWorkingBase();
+      if(!base) throw new Error('device offline');
+
+      const st = await fetchFromBase(base, '/status?_=' + Date.now(), {cache:'no-store'}, (base === 'http://192.168.4.1') ? 900 : 1600);
+      const j = await st.res.json();
+      setModeUi(j.m, j.heat, j.heatValid);
+      setTempText('setTemp', j.tSet);
+      setTempText('realTemp', j.tUp);
+      setNetworkTextByBase(st.base);
+    }catch(e){
+      console.warn('status load failed:', e);
+      setNetworkTextByBase(base || lastResolvedBase);
+      return;
+    }
+
+    try{
+      const pg = await fetchFromBase(base, '/api/powerlog', {cache:'no-store'}, (base === 'http://192.168.4.1') ? 900 : 1600);
+      const g = await pg.res.json();
+      if (g && g.ok){
+        setCostUi(getCurrentMonthSec(g));
+      }
+      setNetworkTextByBase(pg.base || base || lastResolvedBase);
+    }catch(e){
+      console.warn('powerlog load failed:', e);
+      setNetworkTextByBase(base || lastResolvedBase);
+    }
+  }
+
+  function startHomePolling(){
+    if(homeTimer) clearInterval(homeTimer);
+    refreshHomeData();
+    homeTimer = setInterval(refreshHomeData, 5000);
+  }
+
+  function closeFirstInstallHint(){
+    const mask = $('#firstHintMask');
+    if(mask) mask.style.display = 'none';
+  }
+  function openFirstInstallHint(){
+    const mask = $('#firstHintMask');
+    if(!mask) return;
+    mask.style.display = 'flex';
+    const btn = $('#firstHintBtn');
+    const close = $('#firstHintClose');
+    if(btn) btn.onclick = closeFirstInstallHint;
+    if(close) close.onclick = closeFirstInstallHint;
+    mask.onclick = function(e){ if(e.target === mask) closeFirstInstallHint(); };
+  }
+  function checkFirstInstallHint(){
+    if(!isStandalone) return;
+    try{
+      const key = 'hmk_first_run_done';
+      if(localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    }catch(e){}
+    openFirstInstallHint();
+  }
+
+  function updateInstallUi(){
+    const row = $('#installRow');
+    if(!row) return;
+    row.classList.toggle('show', !isStandalone);
+  }
+
+  async function openDevicePage(path){
+    let base = '';
+
+    if (location.hostname === '192.168.4.1'){
+      base = 'http://192.168.4.1';
+    } else {
+      base = await resolveWorkingBase();
+    }
+
+    if(!base){
+      // v1304：當解析不到可用 base 時，不要退回舊 hmk_ip，直接走 AP。
+      // 否則在 AP 模式下若 localStorage 還留著舊 IP，會被錯帶去舊 IP。
+      base = 'http://192.168.4.1';
+    }
+
+    const url = base + path;
+
+    if (location.protocol === 'http:' && isStandalone){
+      $('#frameWrap').style.display = 'block';
+      $('#hmkFrame').src = url;
+    } else {
+      location.href = url;
+    }
+  }
+
+  function openSetupConfirm(){
+    return new Promise(resolve => {
+      let dlg = document.querySelector('#hmk-setup-dialog');
+      if(!dlg){
+        dlg = document.createElement('div');
+        dlg.id = 'hmk-setup-dialog';
+        Object.assign(dlg.style, {
+          position:'fixed', inset:'0', background:'rgba(0,0,0,.4)', display:'none',
+          alignItems:'center', justifyContent:'center', zIndex:'9999'
+        });
+
+        dlg.innerHTML = `
+          <div style="background:#fff;padding:20px 18px;border-radius:16px;max-width:320px;width:80%;box-shadow:0 4px 20px rgba(0,0,0,.3);text-align:center;color:#222">
+            <h3 style="margin:0 0 10px;font-size:18px;">連線確認</h3>
+            <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">
+              ⚠ 請先開啟手機 Wi‑Fi，<br>並點選 <b>HMK-Setup-xxxx</b>。
+            </p>
+            <p style="margin:0 0 16px;font-size:13px;color:#666;">請選擇目前狀態：</p>
+            <div style="display:flex;gap:10px;justify-content:center;">
+              <button data-role="yes" style="flex:1;padding:8px 0;border:none;border-radius:999px;background:#1d9fbd;color:#fff;font-size:14px;">已連接</button>
+              <button data-role="no" style="flex:1;padding:8px 0;border:1px solid #ccc;border-radius:999px;background:#f5f5f5;color:#333;font-size:14px;">未連接</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(dlg);
+      }
+
+      const yesBtn = dlg.querySelector('[data-role="yes"]');
+      const noBtn = dlg.querySelector('[data-role="no"]');
+
+      const close = (val) => {
+        dlg.style.display = 'none';
+        resolve(val);
+      };
+
+      yesBtn.onclick = () => close(true);
+      noBtn.onclick = () => close(false);
+      dlg.style.display = 'flex';
+    });
+  }
+
+  function openInfoDialog(message){
+    return new Promise(resolve => {
+      let dlg = document.querySelector('#hmk-info-dialog');
+      if(!dlg){
+        dlg = document.createElement('div');
+        dlg.id = 'hmk-info-dialog';
+        Object.assign(dlg.style, {
+          position:'fixed', inset:'0', background:'rgba(0,0,0,.4)', display:'none',
+          alignItems:'center', justifyContent:'center', zIndex:'9999'
+        });
+
+        dlg.innerHTML = `
+          <div style="background:#fff;padding:20px 18px;border-radius:16px;max-width:320px;width:80%;box-shadow:0 4px 20px rgba(0,0,0,.3);text-align:center;color:#222">
+            <h3 style="margin:0 0 10px;font-size:18px;">提醒</h3>
+            <p id="hmk-info-text" style="margin:0 0 18px;font-size:14px;line-height:1.6;"></p>
+            <button data-role="ok" style="min-width:120px;padding:8px 0;border:none;border-radius:999px;background:#1d9fbd;color:#fff;font-size:14px;">知道了</button>
+          </div>
+        `;
+        document.body.appendChild(dlg);
+      }
+
+      const textEl = dlg.querySelector('#hmk-info-text');
+      const okBtn = dlg.querySelector('[data-role="ok"]');
+      textEl.innerHTML = String(message).replace(/\n/g, '<br>');
+      okBtn.onclick = () => { dlg.style.display = 'none'; resolve(); };
+      dlg.style.display = 'flex';
+    });
+  }
+
+  async function openSetupPage(){
+    if (location.hostname === '192.168.4.1'){
+      const apUrl = 'http://192.168.4.1/setup';
+      if (location.protocol === 'http:' && isStandalone){
+        $('#frameWrap').style.display = 'block';
+        $('#hmkFrame').src = apUrl;
+      } else {
+        location.href = apUrl;
+      }
+      return;
+    }
+
+    let base = await resolveWorkingBase();
+
+    if(!base){
+      const ok = await openSetupConfirm();
+      if(!ok){
+        await openInfoDialog('請先讓手機連到 HMK-Setup-xxxx，或確認設備已完成連線設定後再試一次。');
+        return;
+      }
+      base = 'http://192.168.4.1';
+    }
+
+    const url = base + '/setup';
+    if (location.protocol === 'http:' && isStandalone){
+      $('#frameWrap').style.display = 'block';
+      $('#hmkFrame').src = url;
+    } else {
+      location.href = url;
+    }
+  }
+
+
+
+  $('#controlBtn')?.addEventListener('click', ()=>{ location.href = './remote.html'; });
+  $('#scheduleBtn')?.addEventListener('click', ()=> openDevicePage('/schedule.html'));
+  $('#statusBtn')?.addEventListener('click', ()=> openDevicePage('/status.html'));
+  $('#setupBtn')?.addEventListener('click', openSetupPage);
+  $('#serviceBtn')?.addEventListener('click', ()=>{ location.href = 'mailto:service@homemark.com.tw'; });
+
+  window.addEventListener('message', e => {
+    const s = String(e.data || '');
+    const origin = String(e.origin || '');
+    const originAllowed = (origin === window.origin) || /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin);
+
+    const m = s.match(/^saveip:([\d.]*)$/);
+    if(m){
+      if(!originAllowed){ console.warn('Ignored saveip from origin', origin); return; }
+      const ip = m[1] || '';
+      saveIp(ip);
+      history.replaceState(null, '', location.pathname);
+      refreshHomeData();
+      try{ if(e.source && e.source.postMessage) e.source.postMessage('ack:saveip', e.origin || '*'); }catch(err){}
+      return;
+    }
+
+    if (s === 'clearip' && originAllowed){
+      saveIp('');
+      history.replaceState(null, '', location.pathname);
+      refreshHomeData();
+      return;
+    }
+
+    if (s === 'gohome' && originAllowed){
+      try{
+        const wrap = $('#frameWrap');
+        const frm = $('#hmkFrame');
+        if (wrap) wrap.style.display = 'none';
+        if (frm) frm.src = 'about:blank';
+      }catch(err){}
+      return;
+    }
+  });
+
+  const hm = location.hash.match(/ip=([\d.]+)/);
+  if(hm){
+    saveIp(hm[1]);
+    history.replaceState(null, '', location.pathname);
+  }
+
+  window.addEventListener('appinstalled', ()=>{ updateInstallUi(); });
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    updateInstallUi();
+  });
+
+  $('#installBtn')?.addEventListener('click', async () => {
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      return;
+    }
+    await openInfoDialog('請使用瀏覽器的「加入主畫面」功能進行安裝。');
+  });
+
+  if('serviceWorker' in navigator){
+    if(location.hostname !== '192.168.4.1'){
+      const v = (window.HMK_VERSION || '0');
+      navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(v)).catch(()=>{});
+    }else{
+      console.log('Running on device AP — skip service worker registration');
+    }
+  }
+
+  renderHotspotName();
+  updateInstallUi();
+  checkFirstInstallHint();
+  autoFetchIpFromAp().finally(() => {
+    autoSyncTimeOnce();
+    startHomePolling();
+  });
+  </script>
+</body>
+</html>

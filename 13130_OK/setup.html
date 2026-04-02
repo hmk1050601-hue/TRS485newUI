@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2aa6bf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
+<title>HMK 連線狀態</title>
+<style>
+  :root{
+    --top:#279bb3;
+    --top2:#32acc5;
+    --panel:#f3f3f1;
+    --teal:#1a8ea5;
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    min-height:100%;
+    font-family:"Noto Sans TC",system-ui,sans-serif;
+    background:var(--top);
+  }
+  body{color:#fff}
+  .app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,var(--top2) 0 42%,var(--panel) 42% 100%);
+  }
+  .top{
+    width:100%;
+    max-width:430px;
+    margin:0 auto;
+    padding:env(safe-area-inset-top,0) 0 0;
+  }
+  .header{
+    height:66px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    border-bottom:1px solid rgba(255,255,255,.45);
+    padding:0 16px;
+  }
+  .backBtn{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border:0;
+    background:transparent;
+    color:#e8f6fb;
+    font-size:16px;
+    padding:8px 6px;
+    cursor:pointer;
+  }
+  .backBtn svg{
+    width:26px;
+    height:26px;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:2.2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .brand{font-size:40px;font-weight:900;letter-spacing:.02em;line-height:1}
+  .panel{
+    max-width:430px;
+    margin:0 auto;
+    width:100%;
+    padding:18px 18px calc(22px + env(safe-area-inset-bottom,0));
+    color:var(--teal);
+  }
+  .title{
+    color:#fff;
+    text-align:center;
+    font-size:22px;
+    font-weight:800;
+    margin:18px 0 6px;
+  }
+  .subtitle{
+    text-align:center;
+    margin:0 0 16px;
+    color:rgba(255,255,255,.94);
+    font-size:14px;
+  }
+  .formCard{
+    background:#fff;
+    border:1px solid #d8e9ed;
+    border-radius:16px;
+    padding:14px 14px 16px;
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+  }
+  .stepLabel{
+    display:block;
+    margin:10px 0 8px;
+    font-size:16px;
+    font-weight:800;
+    color:var(--teal);
+    text-align:left;
+  }
+  input,select{
+    padding:10px 12px;
+    font-size:16px;
+    width:100%;
+    border:1px solid #b8d4db;
+    border-radius:10px;
+    color:#245c67;
+    background:#f7fcfd;
+  }
+  .saveBtn{
+    margin-top:14px;
+    width:100%;
+    min-height:44px;
+    border:none;
+    border-radius:999px;
+    background:linear-gradient(180deg,#2aa6bf,#1a8ea5);
+    color:#fff;
+    font-size:17px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  #progWrap{
+    display:none;
+    margin-top:14px;
+    background:#fff;
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.08);
+    border:1px solid #d7e8ec;
+  }
+  #bar{height:14px;background:#e8eefb;border-radius:10px;overflow:hidden}
+  #bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4f84ff,#2aa8ff)}
+  #topline{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  #pct{font-weight:700;color:#286a78}
+  #sec{font-variant-numeric:tabular-nums;opacity:.85;color:#4f7f8a}
+  .hint{color:#5f8b95;font-size:13px;margin-top:6px}
+  #msg{
+    margin-top:12px;
+    min-height:22px;
+    color:#4f7f8a;
+    font-size:14px;
+    text-align:center;
+    line-height:1.5;
+  }
+  .fallbackRow{
+    display:flex;
+    justify-content:center;
+    margin-top:10px;
+  }
+  .fallbackBtn{
+    display:none;
+    border:1.5px solid #8cc4d0;
+    background:#fff;
+    color:var(--teal);
+    border-radius:999px;
+    min-height:38px;
+    padding:0 16px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .fallbackBtn.show{display:inline-flex;align-items:center}
+  #msg.err{color:#c34f4f}
+  #msg.ok{color:#2aa06e}
+  @media (min-width:480px){
+    .app{display:flex;flex-direction:column;align-items:center}
+    .top,.panel{width:430px}
+    .top{border-top-left-radius:18px;border-top-right-radius:18px;margin-top:10px}
+    .panel{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="header">
+      <button id="backBtn" class="backBtn" type="button" aria-label="返回首頁">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        <span>連線狀態</span>
+      </button>
+      <div class="brand" aria-label="HMK">HMK</div>
+    </div>
+
+    <div class="panel">
+      <div class="title">Wi-Fi 設定</div>
+      <p class="subtitle">請依序完成步驟 1、2、3</p>
+
+      <form id="wifiForm" class="formCard">
+        <label class="stepLabel">1. 選擇您的 Wi-Fi 名稱</label>
+        <select id="ssidSelect" name="ssid"></select>
+
+        <label class="stepLabel">2. 輸入您的 Wi-Fi 密碼</label>
+        <input id="pass" name="pass" type="password" placeholder="輸入密碼">
+
+        <button class="saveBtn" type="submit">3. 儲存密碼完成設定</button>
+      </form>
+
+      <div id="progWrap">
+        <div id="bar"><i id="barIn"></i></div>
+        <div id="topline">
+          <div id="pct">0%</div>
+          <div id="sec">0.0 秒</div>
+        </div>
+        <div class="hint">配置 IP 期間約 30 秒，請保持連線至 HMK-Setup...</div>
+      </div>
+
+      <p id="msg"></p>
+      <div class="fallbackRow">
+        <button id="openBoardSetupBtn" type="button" class="fallbackBtn">改用設備原生設定頁</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const AP_BASE = 'http://192.168.4.1';
+  let lastResolvedBase = '';
+
+  const $ = s => document.querySelector(s);
+
+  function saveIp(ip){
+    if (ip === '') { localStorage.removeItem('hmk_ip'); return; }
+    if (ip) localStorage.setItem('hmk_ip', ip);
+  }
+
+  function getIp(){
+    return localStorage.getItem('hmk_ip') || '';
+  }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    return String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = b => { if(b && !out.includes(b)) out.push(b); };
+
+    const ip = normalizeHost(getIp());
+    let currentHost = '';
+    try{ currentHost = normalizeHost(location.hostname || ''); }catch(e){}
+
+    const currentBase = (currentHost && /^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+    const ipBase = (ip && ip !== '192.168.4.1') ? ('http://' + ip) : '';
+
+    add(currentBase);
+    if(lastResolvedBase && lastResolvedBase !== currentBase) add(lastResolvedBase);
+    if(ipBase && ipBase !== currentBase && ipBase !== lastResolvedBase) add(ipBase);
+    add(AP_BASE);
+
+    return out;
+  }
+
+  async function fetchWithTimeout(url, options, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  async function smartFetch(path, options, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+
+    for(const base of bases){
+      const timeoutMs = base === AP_BASE ? ((timeouts && timeouts.ap) || 1200) : ((timeouts && timeouts.ip) || 2200);
+      try{
+        const res = await fetchWithTimeout(base + path, options || {}, timeoutMs);
+        if(!res.ok){
+          lastErr = new Error('HTTP ' + res.status);
+          continue;
+        }
+        try{
+          const u = new URL(base + path);
+          if(u.hostname && u.hostname !== '192.168.4.1') saveIp(u.hostname);
+        }catch(e){}
+        lastResolvedBase = base;
+        return {res, base};
+      }catch(e){
+        lastErr = e;
+      }
+    }
+
+    throw lastErr || new Error('device offline');
+  }
+
+  function showMsg(text, isErr){
+    const m = $('#msg');
+    if(!m) return;
+    m.textContent = text || '';
+    m.className = isErr ? 'err' : (text ? 'ok' : '');
+  }
+
+  function setFallbackVisible(show){
+    const b = $('#openBoardSetupBtn');
+    if(!b) return;
+    b.classList.toggle('show', !!show);
+  }
+
+  async function openBoardSetupPage(){
+    try{
+      const {base} = await smartFetch('/ping', { method:'GET', cache:'no-store' }, { ap: 1200, ip: 1800 });
+      location.href = base + '/setup';
+    }catch(e){
+      location.href = AP_BASE + '/setup';
+    }
+  }
+
+  function setPct(p){
+    p = Math.round(Math.max(0, Math.min(100, p)));
+    const barIn = $('#barIn'); if(barIn) barIn.style.width = p + '%';
+    const pct = $('#pct'); if(pct) pct.textContent = p + '%';
+  }
+
+  let t0 = 0;
+  let tTimer = null;
+  let animTimer = null;
+  const EST_MS = 35000;
+
+  function startProgress(){
+    const pw = $('#progWrap');
+    if(pw) pw.style.display = 'block';
+    setPct(0);
+    t0 = performance.now();
+
+    clearInterval(tTimer);
+    tTimer = setInterval(() => {
+      const s = (performance.now() - t0) / 1000;
+      const sec = $('#sec');
+      if(sec) sec.textContent = s.toFixed(1) + ' 秒';
+    }, 100);
+
+    clearInterval(animTimer);
+    animTimer = setInterval(() => {
+      const el = performance.now() - t0;
+      const p = Math.min(95, (el / EST_MS) * 95);
+      setPct(p);
+    }, 120);
+  }
+
+  function stopProgressSuccess(){ clearInterval(animTimer); setPct(100); clearInterval(tTimer); }
+  function stopProgressFail(){ clearInterval(animTimer); clearInterval(tTimer); setPct(100); }
+
+  async function quickCheck(){
+    try{
+      await smartFetch('/ping', { method:'GET', cache:'no-store' }, { ap: 1200, ip: 1800 });
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  async function scan(){
+    const sel = $('#ssidSelect');
+    if(sel) sel.innerHTML = '<option>掃描中...</option>';
+    try{
+      const {res} = await smartFetch('/scan', { cache:'no-store' }, { ap: 1200, ip: 2500 });
+      const t = await res.text();
+      if(sel) sel.innerHTML = t;
+      showMsg('Wi-Fi 清單已更新', false);
+      setFallbackVisible(false);
+    }catch(e){
+      if(sel) sel.innerHTML = '<option>無法取得清單</option>';
+      showMsg('無法掃描 Wi-Fi，請確認手機已連到設備網路；可改用設備原生設定頁。', true);
+      setFallbackVisible(true);
+    }
+  }
+
+  async function doSave(ssid, pass){
+    const form = new FormData();
+    form.append('ssid', ssid);
+    form.append('pass', pass);
+    const {res} = await smartFetch('/savewifi', { method:'POST', body: form }, { ap: 65000, ip: 65000 });
+    return await res.text();
+  }
+
+  async function onSubmit(ev){
+    ev.preventDefault();
+    const ssid = $('#ssidSelect')?.value || '';
+    const pass = $('#pass')?.value || '';
+
+    showMsg('儲存中...', false);
+
+    const ok = await quickCheck();
+    if(!ok){
+      alert('偵測到 HMK-Setup 連線品質偏弱，或手機正在進行 Wi-Fi 驗證。\n\n請靠近設備，並確認手機仍在 HMK-Setup 後再試一次。');
+      return;
+    }
+
+    const MAX_TRIES = 3;
+    let attempt = 0;
+
+    while(attempt < MAX_TRIES){
+      attempt++;
+      startProgress();
+
+      try{
+        await doSave(ssid, pass);
+        stopProgressSuccess();
+        showMsg('儲存完成，正在自動跳回首頁...', false);
+        setTimeout(() => {
+          location.href = './index.html';
+        }, 900);
+        return;
+      }catch(e){
+        if(attempt >= MAX_TRIES){
+          stopProgressFail();
+          showMsg('Wi-Fi 設定傳送失敗或逾時，請確認手機仍連到 HMK-Setup。', true);
+          return;
+        }
+      }
+    }
+  }
+
+  $('#backBtn')?.addEventListener('click', () => {
+    location.href = './index.html';
+  });
+  $('#openBoardSetupBtn')?.addEventListener('click', openBoardSetupPage);
+
+  $('#wifiForm')?.addEventListener('submit', onSubmit);
+  scan();
+})();
+</script>
+</body>
+</html>

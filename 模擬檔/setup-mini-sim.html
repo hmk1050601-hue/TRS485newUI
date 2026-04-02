@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>設備端內框架（模擬）</title>
+<style>
+  :root{--bg:#f4fbff;--card:#fff;--line:#cfe3ef;--ink:#295066;--brand:#1b94b1}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{min-height:100%;padding:12px}
+  .head{font-size:13px;font-weight:800;color:#597b90;letter-spacing:.08em;margin-bottom:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 16px rgba(0,0,0,.06)}
+  .title{font-size:16px;font-weight:900;color:#15455a;margin:0 0 8px}
+  .label{display:block;font-size:13px;font-weight:800;color:#4e7287;margin:10px 0 6px}
+  select,input{width:100%;min-height:38px;border:1px solid #b9d3e1;border-radius:10px;padding:0 10px;background:#f9fcff;color:#254f64}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .btn{min-height:40px;border:none;border-radius:999px;font-weight:800;cursor:pointer}
+  .btn.secondary{background:#e8f2f9;color:#2e5a72}
+  .btn.primary{background:linear-gradient(180deg,#29a8c5,#177f98);color:#fff}
+  .msg{margin-top:10px;min-height:20px;font-size:13px;color:#4d7687}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">DEVICE SETUP MINI (SIM)</div>
+  <div class="card">
+    <p class="title">設備端 Wi-Fi 內框架（模擬）</p>
+
+    <label class="label" for="ssid">Wi-Fi 名稱</label>
+    <select id="ssid">
+      <option value="Office-Guest">Office-Guest</option>
+      <option value="Home-WiFi-2.4G">Home-WiFi-2.4G</option>
+      <option value="TestLab">TestLab</option>
+    </select>
+
+    <label class="label" for="pass">Wi-Fi 密碼</label>
+    <input id="pass" type="password" placeholder="輸入密碼">
+
+    <div class="row">
+      <button id="saveBtn" class="btn primary" type="button">模擬送出</button>
+      <button id="backBtn" class="btn secondary" type="button">返回外層</button>
+    </div>
+
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
+<script src="./sim-mock-api.js"></script>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const msg = $('#msg');
+
+  function setMsg(t){ if(msg) msg.textContent = t || ''; }
+
+  $('#saveBtn')?.addEventListener('click', async ()=>{
+    const ssid = $('#ssid')?.value || 'Office-Guest';
+    const pass = $('#pass')?.value || '';
+    setMsg('模擬儲存中...');
+
+    try{
+      const form = new FormData();
+      form.append('ssid', ssid);
+      form.append('pass', pass);
+      await fetch('/savewifi', { method:'POST', body: form, cache:'no-store' });
+      localStorage.setItem('hmk_ip', '192.168.50.88');
+      setMsg('模擬儲存完成，回傳外層頁面。');
+      setTimeout(()=>{
+        try{ window.parent.postMessage('saveip:192.168.50.88', '*'); }catch(e){}
+      }, 350);
+    }catch(e){
+      setMsg('模擬儲存失敗，請再試一次。');
+    }
+  });
+
+  $('#backBtn')?.addEventListener('click', ()=>{
+    try{ window.parent.postMessage('saveip:192.168.50.88', '*'); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

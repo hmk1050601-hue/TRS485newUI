@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2aa6bf">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HMK">
+<title>HMK 電費明細</title>
+<style>
+  :root{
+    --top:#279bb3;
+    --top2:#32acc5;
+    --panel:#f3f3f1;
+    --line:rgba(255,255,255,.35);
+    --teal:#2aa6bf;
+    --tealDeep:#1a8ea5;
+    --chip:#dff2f7;
+    --err:#c34f4f;
+    --ok:#2aa06e;
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    min-height:100%;
+    font-family:"Noto Sans TC",system-ui,sans-serif;
+    background:var(--top);
+    color:#fff;
+  }
+  .app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,var(--top2) 0 34%,var(--panel) 34% 100%);
+  }
+  .top{
+    max-width:430px;
+    width:100%;
+    margin:0 auto;
+    padding:env(safe-area-inset-top,0) 0 0;
+  }
+  .header{
+    height:66px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    border-bottom:1px solid rgba(255,255,255,.45);
+    padding:0 16px;
+  }
+  .backBtn{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border:0;
+    background:transparent;
+    color:#e8f6fb;
+    font-size:18px;
+    font-weight:700;
+    padding:8px 6px;
+    cursor:pointer;
+  }
+  .backBtn svg{
+    width:26px;
+    height:26px;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:2.2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .brand{font-size:40px;font-weight:900;letter-spacing:.02em;line-height:1}
+
+  .content{
+    max-width:430px;
+    width:100%;
+    margin:0 auto;
+    padding:12px 20px calc(22px + env(safe-area-inset-bottom,0));
+    color:var(--tealDeep);
+  }
+  .toolbar{
+    background:#fff;
+    border-radius:16px;
+    border:1px solid #d7e8ec;
+    padding:12px;
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+  }
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:13px;font-weight:800;color:#5d8894}
+  select,input{
+    border:1px solid #cfe2e8;
+    border-radius:12px;
+    min-height:38px;
+    padding:0 10px;
+    color:#1f5d6b;
+    font-size:14px;
+    background:#fff;
+  }
+  .customWrap{margin-top:10px;display:none}
+  .customWrap.show{display:block}
+  .summary{
+    margin-top:10px;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid #d7e8ec;
+    border-radius:14px;
+    padding:10px;
+    text-align:center;
+  }
+  .label{font-size:12px;color:#6f99a4;font-weight:800}
+  .num{margin-top:4px;font-size:24px;font-weight:900;color:var(--tealDeep);line-height:1.05}
+  .numSub{font-size:13px;color:#6f99a4;font-weight:700}
+
+  .listCard{
+    margin-top:10px;
+    background:#fff;
+    border:1px solid #d7e8ec;
+    border-radius:16px;
+    overflow:hidden;
+  }
+  .listHead{
+    padding:10px 12px;
+    border-bottom:1px solid #e2edf1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:#5d8894;
+    font-weight:800;
+  }
+  .tableWrap{max-height:54vh;overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:10px 12px;border-bottom:1px solid #eef4f6;text-align:center;white-space:nowrap}
+  th{font-size:12px;color:#6f99a4;font-weight:900;background:#f8fcfd;position:sticky;top:0;z-index:1}
+  .pos{color:var(--ok);font-weight:800}
+  .neg{color:var(--err);font-weight:800}
+
+  .msg{
+    margin-top:10px;
+    min-height:20px;
+    font-size:13px;
+    text-align:center;
+    color:#5d8894;
+  }
+  .msg.err{color:var(--err)}
+  .msg.ok{color:var(--ok)}
+
+
+  @media (min-width:480px){
+    .app{display:flex;flex-direction:column;align-items:center}
+    .top,.content{width:430px}
+    .top{border-top-left-radius:18px;border-top-right-radius:18px;margin-top:10px}
+    .content{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="header">
+      <button id="backBtn" class="backBtn" type="button" aria-label="返回上一頁">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        <span>電費明細</span>
+      </button>
+      <div class="brand" aria-label="HMK">HMK</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="toolbar">
+      <div class="grid">
+        <div class="field">
+          <label for="modeSel">模式</label>
+          <select id="modeSel">
+            <option value="day">日</option>
+            <option value="month" selected>月</option>
+            <option value="year">年</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="periodSel">期間</label>
+          <select id="periodSel"></select>
+        </div>
+        <div class="field">
+          <label for="pwrSel">功率</label>
+          <select id="pwrSel">
+            <option value="4">4 kW</option>
+            <option value="6">6 kW</option>
+            <option value="custom">其它</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="rateInp">電費(元/度)</label>
+          <input id="rateInp" type="number" step="0.01" min="0" inputmode="decimal" value="1.68">
+        </div>
+      </div>
+
+      <div id="pwrCustomWrap" class="customWrap">
+        <div class="field">
+          <label for="pwrCustomInp">其它功率(kW)</label>
+          <input id="pwrCustomInp" type="number" step="0.1" min="0.1" inputmode="decimal" placeholder="請輸入功率">
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="card">
+          <div class="label">本期時數</div>
+          <div id="hoursVal" class="num">--</div>
+          <div class="numSub">小時</div>
+        </div>
+        <div class="card">
+          <div class="label">本期度數</div>
+          <div id="kwhVal" class="num">--</div>
+          <div class="numSub">度</div>
+        </div>
+        <div class="card">
+          <div class="label">本期電費</div>
+          <div id="costVal" class="num">--</div>
+          <div class="numSub">元</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="listCard">
+      <div class="listHead">
+        <span id="tableTitle">期間明細</span>
+        <select id="unitSel" style="max-width:88px">
+          <option value="h" selected>小時</option>
+          <option value="k">度</option>
+          <option value="c">元</option>
+        </select>
+        <span id="metaText">--</span>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>期間</th>
+              <th>本期</th>
+              <th>去年同期</th>
+              <th>差異</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
+<script src="./sim-mock-api.js"></script>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const AP_BASE = 'http://192.168.4.1';
+  let lastResolvedBase = '';
+  let powerData = null;
+
+  function saveIp(ip){
+    if(ip === ''){ localStorage.removeItem('hmk_ip'); return; }
+    if(ip) localStorage.setItem('hmk_ip', ip);
+  }
+  function getIp(){ return localStorage.getItem('hmk_ip') || ''; }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    return String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = b => { if(b && !out.includes(b)) out.push(b); };
+    const ip = normalizeHost(getIp());
+    let currentHost = '';
+    try{ currentHost = normalizeHost(location.hostname || ''); }catch(e){}
+    const currentBase = (currentHost && /^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+    const ipBase = (ip && ip !== '192.168.4.1') ? ('http://' + ip) : '';
+
+    add(currentBase);
+    if(lastResolvedBase && lastResolvedBase !== currentBase) add(lastResolvedBase);
+    if(ipBase && ipBase !== currentBase && ipBase !== lastResolvedBase) add(ipBase);
+    add(AP_BASE);
+    return out;
+  }
+
+  async function fetchWithTimeout(url, options, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, options || {}, {signal: ctrl.signal}));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  async function smartFetch(path, options, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+    for(const base of bases){
+      const timeoutMs = base === AP_BASE
+        ? ((timeouts && timeouts.ap) || 900)
+        : ((timeouts && timeouts.ip) || 1800);
+      try{
+        const res = await fetchWithTimeout(base + path, options || {}, timeoutMs);
+        if(!res.ok){
+          lastErr = new Error('HTTP ' + res.status);
+          continue;
+        }
+        try{
+          const u = new URL(base);
+          const host = u.hostname;
+          if(host && host !== '192.168.4.1') saveIp(host);
+        }catch(e){}
+        lastResolvedBase = base;
+        return {res, base};
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('fetch failed');
+  }
+
+  function showMsg(text, isErr){
+    const el = $('#msg');
+    if(!el) return;
+    el.textContent = text || '';
+    el.className = 'msg ' + (isErr ? 'err' : 'ok');
+  }
+
+  const pwrSel = $('#pwrSel');
+  const pwrCustomWrap = $('#pwrCustomWrap');
+  const pwrCustomInp = $('#pwrCustomInp');
+  const rateInp = $('#rateInp');
+  const unitSel = $('#unitSel');
+  const K_PWR = 'pl_pwr';
+  const K_PWR_CUSTOM = 'pl_pwr_custom';
+  const K_RATE = 'pl_rate';
+  const K_UNIT = 'pl_unit';
+
+  function getPowerKw(){
+    const mode = pwrSel ? pwrSel.value : '4';
+    if(mode === 'custom'){
+      const x = parseFloat(pwrCustomInp ? pwrCustomInp.value : '');
+      return (isFinite(x) && x > 0) ? x : 4;
+    }
+    const k = parseFloat(mode);
+    return (isFinite(k) && k > 0) ? k : 4;
+  }
+
+  function getRate(){
+    const r = parseFloat(rateInp ? rateInp.value : '');
+    return (isFinite(r) && r >= 0) ? r : 1.68;
+  }
+
+  function getUnit(){
+    return (unitSel && unitSel.value) ? unitSel.value : 'h';
+  }
+
+  function updatePowerUi(){
+    if(!pwrCustomWrap || !pwrSel) return;
+    pwrCustomWrap.classList.toggle('show', pwrSel.value === 'custom');
+  }
+
+  function savePrefs(){
+    try{
+      if(pwrSel) localStorage.setItem(K_PWR, pwrSel.value || '4');
+      if(pwrCustomInp) localStorage.setItem(K_PWR_CUSTOM, pwrCustomInp.value || '');
+      if(rateInp) localStorage.setItem(K_RATE, rateInp.value || '1.68');
+      if(unitSel) localStorage.setItem(K_UNIT, unitSel.value || 'h');
+    }catch(e){}
+  }
+
+  function loadPrefs(){
+    try{
+      const p = localStorage.getItem(K_PWR);
+      const pc = localStorage.getItem(K_PWR_CUSTOM);
+      const r = localStorage.getItem(K_RATE);
+      const u = localStorage.getItem(K_UNIT);
+      if(p && pwrSel) pwrSel.value = p;
+      if(pc && pwrCustomInp) pwrCustomInp.value = pc;
+      if(r && rateInp) rateInp.value = r;
+      if(u && unitSel) unitSel.value = u;
+    }catch(e){}
+    updatePowerUi();
+  }
+
+  function fmtNumber(n){
+    return Number(n || 0).toLocaleString('zh-TW', {maximumFractionDigits:1});
+  }
+
+  function ymToLabel(ym){
+    const y = Math.floor(ym / 12);
+    const m = (ym % 12) + 1;
+    return y + '年' + m + '月';
+  }
+
+  function getDaysInMonth(year, month){
+    return new Date(year, month, 0).getDate();
+  }
+
+  function getValidMonthYms(g){
+    const out = [];
+    if(!g || !Array.isArray(g.months)) return out;
+    const baseYM = Number(g.baseYM || 0);
+    for(let i = 0; i < g.months.length; i++){
+      out.push(baseYM + i);
+    }
+    return out;
+  }
+
+  function getMonthSec(g, ym){
+    const idx = ym - Number(g.baseYM || 0);
+    if(idx < 0 || !Array.isArray(g.months) || idx >= g.months.length) return 0;
+    return Number(g.months[idx] || 0);
+  }
+
+  function getDaySecMap(g, ym, day){
+    const key = String(ym);
+    const arr = g && g.daysByYM && Array.isArray(g.daysByYM[key]) ? g.daysByYM[key] : [];
+    return Number(arr[day - 1] || 0);
+  }
+
+  function renderPeriods(g){
+    const mode = $('#modeSel').value;
+    const sel = $('#periodSel');
+    sel.innerHTML = '';
+
+    if(mode === 'month' || mode === 'day'){
+      const yms = getValidMonthYms(g).reverse();
+      yms.forEach(ym => {
+        const op = document.createElement('option');
+        op.value = String(ym);
+        op.textContent = ymToLabel(ym);
+        sel.appendChild(op);
+      });
+      if(!sel.value && yms.length) sel.value = String(yms[0]);
+      return;
+    }
+
+    const years = [];
+    getValidMonthYms(g).forEach(ym => {
+      const y = Math.floor(ym / 12);
+      if(!years.includes(y)) years.push(y);
+    });
+    years.sort((a,b)=> b - a).forEach(y => {
+      const op = document.createElement('option');
+      op.value = String(y);
+      op.textContent = y + '年';
+      sel.appendChild(op);
+    });
+    if(!sel.value && years.length) sel.value = String(years[0]);
+  }
+
+  function secToHours(sec){ return (Number(sec || 0) / 3600); }
+  function secToKwh(sec){ return secToHours(sec) * getPowerKw(); }
+  function secToCost(sec){ return secToKwh(sec) * getRate(); }
+
+  function valueByUnit(sec){
+    const u = getUnit();
+    if(u === 'k') return secToKwh(sec);
+    if(u === 'c') return secToCost(sec);
+    return secToHours(sec);
+  }
+
+  function unitText(){
+    const u = getUnit();
+    if(u === 'k') return '度';
+    if(u === 'c') return '元';
+    return '小時';
+  }
+
+  function prevYearMonthSec(g, ym){
+    return getMonthSec(g, ym - 12);
+  }
+
+  function prevYearDaySec(g, ym, day){
+    return getDaySecMap(g, ym - 12, day);
+  }
+
+  function yearMonthSec(g, year, month){
+    const ym = year * 12 + (month - 1);
+    return getMonthSec(g, ym);
+  }
+
+  function yearTotalSec(g, year){
+    let s = 0;
+    for(let m = 1; m <= 12; m++) s += yearMonthSec(g, year, m);
+    return s;
+  }
+
+  function diffPct(curSec, prevSec){
+    const c = Number(curSec || 0);
+    const p = Number(prevSec || 0);
+    if(p <= 0) return null;
+    return ((c - p) / p) * 100;
+  }
+
+  function renderRows(g){
+    const mode = $('#modeSel').value;
+    const period = $('#periodSel').value;
+    const rows = $('#rows');
+    rows.innerHTML = '';
+
+    const addRow = (label, curSec, prevSec) => {
+      const tr = document.createElement('tr');
+      const curV = valueByUnit(curSec);
+      const prevV = valueByUnit(prevSec);
+      const pct = diffPct(curSec, prevSec);
+      const pctText = (pct == null) ? '--' : ((pct > 0 ? '+' : '') + pct.toFixed(1) + '%');
+      const pctClass = (pct == null) ? '' : (pct >= 0 ? 'pos' : 'neg');
+
+      tr.innerHTML =
+        '<td>' + label + '</td>' +
+        '<td>' + fmtNumber(curV) + '</td>' +
+        '<td>' + (prevSec > 0 ? fmtNumber(prevV) : '--') + '</td>' +
+        '<td class="' + pctClass + '">' + pctText + '</td>';
+      rows.appendChild(tr);
+      return {curSec, prevSec};
+    };
+
+    let sumCurSec = 0;
+    let sumPrevSec = 0;
+
+    if(mode === 'month'){
+      const ym = Number(period || 0);
+      const sec = getMonthSec(g, ym);
+      const prev = prevYearMonthSec(g, ym);
+      const r = addRow(ymToLabel(ym), sec, prev);
+      sumCurSec += r.curSec;
+      sumPrevSec += r.prevSec;
+      $('#tableTitle').textContent = '月份明細';
+      $('#metaText').textContent = '單位: ' + unitText();
+    } else if(mode === 'day'){
+      const ym = Number(period || 0);
+      const y = Math.floor(ym / 12);
+      const m = (ym % 12) + 1;
+      const days = getDaysInMonth(y, m);
+      for(let d = days; d >= 1; d--){
+        const sec = getDaySecMap(g, ym, d);
+        const prev = prevYearDaySec(g, ym, d);
+        const r = addRow(String(d) + '日', sec, prev);
+        sumCurSec += r.curSec;
+        sumPrevSec += r.prevSec;
+      }
+      $('#tableTitle').textContent = ymToLabel(ym) + ' 日明細';
+      $('#metaText').textContent = '單位: ' + unitText();
+    } else {
+      const y = Number(period || 0);
+      const years = [];
+      getValidMonthYms(g).forEach(ym => {
+        const yy = Math.floor(ym / 12);
+        if(!years.includes(yy)) years.push(yy);
+      });
+      years.sort((a,b)=> b - a).forEach(yy => {
+        const sec = yearTotalSec(g, yy);
+        const prev = yearTotalSec(g, yy - 1);
+        const r = addRow(String(yy) + '年', sec, prev);
+        if(yy === y){
+          sumCurSec = r.curSec;
+          sumPrevSec = r.prevSec;
+        }
+      });
+      $('#tableTitle').textContent = y + ' 年明細';
+      $('#metaText').textContent = '單位: ' + unitText();
+    }
+
+    $('#hoursVal').textContent = fmtNumber(secToHours(sumCurSec));
+    $('#kwhVal').textContent = fmtNumber(secToKwh(sumCurSec));
+    $('#costVal').textContent = fmtNumber(secToCost(sumCurSec));
+  }
+
+  async function loadData(){
+    showMsg('讀取用電記錄中...', false);
+    try{
+      const got = await smartFetch('/api/powerlog?_=' + Date.now(), {cache:'no-store'}, {ap:900, ip:1800});
+      const g = await got.res.json().catch(()=>null);
+      if(!g || !g.ok) throw new Error('資料格式錯誤');
+
+      if(!Array.isArray(g.months)){
+        if(Array.isArray(g.monthSec)) g.months = g.monthSec;
+        else if(Array.isArray(g.monthSecs)) g.months = g.monthSecs;
+      }
+
+      powerData = g;
+      renderPeriods(g);
+      renderRows(g);
+      showMsg('電費明細已更新', false);
+    }catch(e){
+      showMsg('讀取失敗：' + (e && e.message ? e.message : e), true);
+    }
+  }
+
+  $('#backBtn')?.addEventListener('click', ()=>{
+    if(history.length > 1){ history.back(); return; }
+    location.href = './status.html';
+  });
+
+  $('#modeSel')?.addEventListener('change', ()=>{
+    if(!powerData) return;
+    renderPeriods(powerData);
+    renderRows(powerData);
+  });
+
+  $('#periodSel')?.addEventListener('change', ()=>{
+    if(!powerData) return;
+    renderRows(powerData);
+  });
+
+  pwrSel?.addEventListener('change', ()=>{
+    updatePowerUi();
+    savePrefs();
+    if(powerData) renderRows(powerData);
+  });
+
+  pwrCustomInp?.addEventListener('input', ()=>{
+    savePrefs();
+    if(powerData) renderRows(powerData);
+  });
+
+  rateInp?.addEventListener('input', ()=>{
+    savePrefs();
+    if(powerData) renderRows(powerData);
+  });
+
+  unitSel?.addEventListener('change', ()=>{
+    savePrefs();
+    if(powerData) renderRows(powerData);
+  });
+
+  loadPrefs();
+  loadData();
+})();
+</script>
+</body>
+</html>

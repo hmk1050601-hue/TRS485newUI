@@ -1,0 +1,1317 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#289fb8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HMK 時間設定</title>
+<style>
+:root{
+  --top:#279bb3;
+  --top2:#32acc5;
+  --cream:#f5e4a1;
+  --panel:#f3f3f1;
+  --line:rgba(255,255,255,.36);
+  --ink:#0d4a58;
+  --inkSoft:#80afbb;
+  --teal:#29a1ba;
+  --tealDark:#1b8ca3;
+  --danger:#da5b5b;
+  --panelRadius:22px;
+  --panelLift:28px;
+  --shadow:0 14px 30px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  min-height:100%;
+  background:var(--top);
+  font-family:"Noto Sans TC",system-ui,sans-serif;
+}
+body{
+  color:#fff;
+}
+button,select{
+  font:inherit;
+}
+main{
+  min-height:100vh;
+  background:linear-gradient(180deg,var(--top2) 0 60%,var(--panel) 60% 100%);
+}
+.hero{
+  max-width:430px;
+  margin:0 auto;
+  padding:env(safe-area-inset-top,0) 0 0;
+  position:relative;
+}
+.header{
+  height:66px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  border-bottom:1px solid rgba(255,255,255,.45);
+  padding:0 16px;
+}
+.backBtn{
+  position:absolute;
+  left:10px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:0;
+  background:transparent;
+  color:#e8f6fb;
+  font-size:16px;
+  padding:8px 6px;
+  cursor:pointer;
+}
+.backBtn svg{
+  width:26px;
+  height:26px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2.2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.brandWrap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+}
+.brand{
+  font-size:40px;
+  font-weight:900;
+  letter-spacing:.02em;
+  line-height:1;
+}
+.heroInner{
+  padding:16px 18px 18px;
+}
+.btnHiddenTap{
+  position:absolute;
+  left:50%;
+  top:76px;
+  transform:translateX(-50%);
+  width:160px;
+  min-height:44px;
+  border:0;
+  background:transparent;
+  opacity:0;
+  cursor:pointer;
+}
+.heroLabel{
+  margin-top:18px;
+  text-align:center;
+  color:rgba(255,255,255,.88);
+  font-size:26px;
+  font-weight:700;
+  letter-spacing:.22em;
+}
+.timerToggle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:min(100%,340px);
+  margin:8px auto 0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--cream);
+  font-size:clamp(56px,18vw,84px);
+  font-weight:900;
+  line-height:1.02;
+  letter-spacing:.02em;
+  padding:0;
+  cursor:pointer;
+  text-shadow:0 10px 24px rgba(0,0,0,.12);
+  box-shadow:none;
+}
+.timerToggle.running{color:var(--cream)}
+.timerToggle:disabled{opacity:.68;cursor:wait}
+.timerToggle:active{transform:scale(.985)}
+.heroHint{
+  text-align:center;
+  color:rgba(255,255,255,.95);
+  font-size:14px;
+  font-weight:700;
+}
+.heroHint{display:none !important}
+.slotStrip{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  margin-top:24px;
+}
+.slotCard{
+  border:0;
+  border-right:1px solid var(--line);
+  background:transparent;
+  color:#fff;
+  min-width:0;
+  min-height:102px;
+  padding:0 6px;
+  cursor:pointer;
+  text-align:center;
+}
+.slotCard:last-child{border-right:0}
+.slotCard.isSelected{background:rgba(255,255,255,.06)}
+.slotName{
+  font-size:clamp(13px,3.4vw,16px);
+  font-weight:900;
+}
+.slotStatus{
+  margin-top:4px;
+  font-size:12px;
+  color:rgba(255,255,255,.72);
+}
+.slotCard.isEnabled .slotStatus{color:var(--cream)}
+.slotTime{
+  margin-top:9px;
+  color:#eefcff;
+  font-size:clamp(13px,3.4vw,18px);
+  font-weight:700;
+  line-height:1.25;
+  letter-spacing:.01em;
+  font-variant-numeric:tabular-nums;
+  word-break:keep-all;
+}
+.slotCard.isDisabled .slotTime{opacity:.56}
+.panel{
+  position:relative;
+  max-width:430px;
+  margin:calc(-1 * var(--panelLift)) auto 0;
+  background:var(--panel);
+  border-top-left-radius:var(--panelRadius);
+  border-top-right-radius:var(--panelRadius);
+  min-height:38vh;
+  padding:18px 18px calc(98px + env(safe-area-inset-bottom,0));
+  box-shadow:0 -12px 28px rgba(0,0,0,.05);
+}
+.toggleRow{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.stateBtn{
+  width:28px;
+  height:28px;
+  justify-self:center;
+  border-radius:50%;
+  border:1.5px solid var(--teal);
+  background:#fff;
+  color:var(--teal);
+  box-shadow:0 6px 12px rgba(41,161,186,.16);
+  font-size:16px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  transition:transform .08s ease,box-shadow .12s ease,border-color .12s ease,color .12s ease;
+}
+.stateBtn.disabled{
+  color:#86aab4;
+  border-color:#c5dae0;
+  box-shadow:none;
+}
+.stateBtn.selected{
+  transform:translateY(-2px);
+  box-shadow:0 8px 14px rgba(41,161,186,.18);
+}
+.stateBtn:active{transform:translateY(1px)}
+.onOffRow{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:calc(12px + env(safe-area-inset-bottom,0));
+  width:min(430px,calc(100% - 24px));
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  z-index:1200;
+  border-top:1px solid #c9dee4;
+}
+.onOffBtn{
+  min-height:86px;
+  border:0;
+  background:transparent;
+  color:var(--teal);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  transition:color .12s ease;
+}
+.onOffBtn + .onOffBtn{border-left:1px solid #c9dee4}
+.onOffBtn.off{color:var(--teal)}
+.onOffBtn.active{color:var(--teal)}
+.onOffBtn:active{transform:scale(.985)}
+.onOffGlyph{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:0;
+  background:transparent;
+  color:var(--teal);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .12s ease,color .12s ease,border-color .12s ease;
+}
+.onOffBtn.active .onOffGlyph{
+  background:var(--teal);
+  border-color:var(--teal);
+  color:#fff;
+}
+.onOffIcon{
+  width:30px;
+  height:30px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2.2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.onOffText{
+  font-size:20px;
+  line-height:1;
+  letter-spacing:.08em;
+}
+.editor{
+  margin-top:18px;
+}
+.editorRow{
+  display:grid;
+  grid-template-columns:52px 1fr;
+  align-items:center;
+  gap:12px;
+  margin:14px 0;
+}
+.editorRow label{
+  color:var(--tealDark);
+  font-size:16px;
+  font-weight:900;
+}
+.selectWrap,.timeShell{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:0 14px;
+  border:1.5px solid #bfe1e7;
+  border-radius:999px;
+  background:#fff;
+}
+.selectWrap select,.timeShell select{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--tealDark);
+  font-size:18px;
+  font-weight:800;
+  outline:none;
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  text-align:center;
+  text-align-last:center;
+}
+.selectTrigger{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--tealDark);
+  font-size:18px;
+  font-weight:800;
+  outline:none;
+  text-align:center;
+  cursor:pointer;
+}
+.selectTrigger::after{
+  content:'▾';
+  margin-left:8px;
+  color:#5d98a7;
+  font-size:14px;
+  vertical-align:1px;
+}
+.timeShell{
+  padding:0 10px;
+}
+.timeShellInner{
+  width:100%;
+  display:grid;
+  grid-template-columns:1fr 14px 1fr;
+  align-items:center;
+  gap:0;
+}
+.timeColon{
+  text-align:center;
+  color:#72a7b4;
+  font-size:19px;
+  font-weight:900;
+}
+.timePair{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+}
+.dash{
+  color:#7aa6b1;
+  font-size:24px;
+  font-weight:700;
+  text-align:center;
+}
+.actionRow{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin-top:20px;
+}
+.btnSub,.btnMain,.btnDev,.btn.primary{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:52px;
+  border:0;
+  border-radius:18px;
+  color:#fff;
+  font-size:17px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.28),0 6px 0 rgba(0,0,0,.18),0 8px 18px rgba(0,0,0,.14);
+  transition:transform .06s ease,box-shadow .1s ease,filter .1s ease;
+}
+.btnMain{background:linear-gradient(to bottom,#2aa6c1,#167b93)}
+.btnSub{background:linear-gradient(to bottom,#9aaeb6,#708891)}
+.btnDev{display:none;margin-top:12px;width:100%;background:linear-gradient(to bottom,#5c6df7,#3343c8)}
+.btnDev.show{display:flex}
+.btnMain:active,.btnSub:active,.btnDev:active,.btn.primary:active{
+  transform:translateY(3px);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.28),0 2px 0 rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.1);
+}
+#msg{
+  min-height:22px;
+  margin-top:14px;
+  text-align:center;
+  font-size:14px;
+  font-weight:800;
+}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:999}
+.modal.show{display:flex}
+.modalCard{width:min(520px,100%);background:#fff;border-radius:20px;box-shadow:0 16px 30px rgba(0,0,0,.22);padding:16px 16px 14px}
+.modalTitle{font-size:16px;font-weight:900;color:var(--ink);margin:0 0 8px}
+.modalBody{font-size:14px;color:#223344;line-height:1.6}
+.modalBody ul{margin:10px 0 0 18px;padding:0}
+.modalBody li{margin:6px 0}
+.modalActions{margin-top:14px;display:flex;justify-content:flex-end}
+.btn.primary{background:linear-gradient(to bottom,#2aa6c1,#167b93)}
+.slotPickerCard{
+  width:min(360px,100%);
+  background:linear-gradient(180deg,#f7fcfe 0%,#edf7fa 100%);
+  border:1px solid #cbe6ee;
+  border-radius:20px;
+  box-shadow:0 16px 30px rgba(16,83,97,.2);
+  padding:14px;
+}
+.slotPickerTitle{
+  margin:0 0 10px;
+  text-align:center;
+  color:var(--tealDark);
+  font-size:17px;
+  font-weight:900;
+  letter-spacing:.05em;
+}
+.slotPickerList{
+  display:grid;
+  gap:10px;
+}
+.slotPickerItem{
+  min-height:44px;
+  border-radius:12px;
+  border:1px solid #9fc9d6;
+  background:#fff;
+  color:var(--tealDark);
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+.slotPickerItem.active{
+  border-color:var(--teal);
+  background:linear-gradient(180deg,#2aa6c1,#167b93);
+  color:#fff;
+}
+.slotPickerActions{
+  margin-top:12px;
+  display:flex;
+  justify-content:flex-end;
+}
+.slotPickerClose{
+  min-width:84px;
+  min-height:40px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(to bottom,#9aaeb6,#708891);
+  color:#fff;
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+}
+@media (min-width:480px){
+  body{display:flex;justify-content:center}
+  main{width:430px}
+  .hero{margin-top:10px}
+  .hero,.panel{width:430px}
+  .hero{border-top-left-radius:18px;border-top-right-radius:18px;overflow:hidden}
+  .panel{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+}
+@media (max-width:390px){
+  .slotCard{padding:0 3px;min-height:96px}
+  .slotName{font-size:12px}
+  .slotTime{font-size:12px}
+  .editorRow{grid-template-columns:46px 1fr}
+  .actionRow{grid-template-columns:1fr}
+}
+</style>
+<script src="./version.js?v=13162"></script>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="header">
+      <button id="backBtn" class="backBtn" type="button" aria-label="返回首頁">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        <span>時間設定</span>
+      </button>
+      <div class="brandWrap" aria-label="HMK">
+        <div class="brand"><img src="./HMK_logo_text.png" alt="HMK" style="height:80px;width:auto;display:block;object-fit:contain"></div>
+      </div>
+    </div>
+    <button id="devTapBtn" class="btnHiddenTap" type="button" aria-label="hidden"></button>
+    <div class="heroInner">
+      <div class="heroLabel">定時加熱</div>
+      <button id="timerToggleBtn" class="timerToggle" type="button">關閉中</button>
+      <div id="timerToggleHint" class="heroHint">目前未啟用定時模式，按下可啟動</div>
+      <div id="slotStrip" class="slotStrip"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div id="slotToggleRow" class="toggleRow"></div>
+
+    <div class="editor">
+      <div class="editorRow">
+        <label for="slotSelectBtn">時段</label>
+        <div class="selectWrap">
+          <button id="slotSelectBtn" class="selectTrigger" type="button" aria-haspopup="dialog" aria-expanded="false">時段1</button>
+        </div>
+      </div>
+
+      <div class="editorRow">
+        <label>時間</label>
+        <div class="timePair">
+          <div id="startPicker"></div>
+          <div class="dash">-</div>
+          <div id="endPicker"></div>
+        </div>
+      </div>
+
+      <div class="actionRow">
+        <button id="saveBtn" class="btnMain" type="button">儲存設定</button>
+      </div>
+
+      <button id="devBtn" class="btnDev" type="button">開發</button>
+      <div id="msg"></div>
+    </div>
+    <div class="onOffRow">
+      <button id="openBtn" class="onOffBtn" type="button" aria-label="開">
+        <span class="onOffGlyph" aria-hidden="true">
+          <svg class="onOffIcon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v7"/>
+            <path d="M6.2 6.2a8 8 0 1 0 11.3 0"/>
+          </svg>
+        </span>
+        <span class="onOffText">開</span>
+      </button>
+      <button id="closeBtn" class="onOffBtn off" type="button" aria-label="關">
+        <span class="onOffGlyph" aria-hidden="true">
+          <svg class="onOffIcon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8"/>
+            <path d="M9.3 9.3l5.4 5.4M14.7 9.3l-5.4 5.4"/>
+          </svg>
+        </span>
+        <span class="onOffText">關</span>
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<div id="alertModal" class="modal" aria-hidden="true">
+  <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="alertTitle">
+    <div id="alertTitle" class="modalTitle">提醒</div>
+    <div id="alertBody" class="modalBody"></div>
+    <div class="modalActions">
+      <button id="alertOk" class="btn primary" type="button">知道了</button>
+    </div>
+  </div>
+</div>
+<div id="slotPickerModal" class="modal" aria-hidden="true">
+  <div class="slotPickerCard" role="dialog" aria-modal="true" aria-labelledby="slotPickerTitle">
+    <div id="slotPickerTitle" class="slotPickerTitle">選擇時段</div>
+    <div id="slotPickerList" class="slotPickerList"></div>
+    <div class="slotPickerActions">
+      <button id="slotPickerClose" class="slotPickerClose" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const SLOT_META = [
+    { index:0, label:'時段1', shortLabel:'時段1' },
+    { index:1, label:'時段2', shortLabel:'時段2' },
+    { index:2, label:'時段3', shortLabel:'時段3' }
+  ];
+  const rows = SLOT_META.map((slot)=>({
+    index: slot.index,
+    label: slot.label,
+    shortLabel: slot.shortLabel,
+    enabled: false,
+    start: '00:00',
+    end: '00:00',
+    summaryEl: null,
+    toggleEl: null
+  }));
+  const slotStrip = document.getElementById('slotStrip');
+  const slotToggleRow = document.getElementById('slotToggleRow');
+  const slotSelectBtn = document.getElementById('slotSelectBtn');
+  const startPickerHost = document.getElementById('startPicker');
+  const endPickerHost = document.getElementById('endPicker');
+  const msgEl = document.getElementById('msg');
+  const backBtn = document.getElementById('backBtn');
+  const timerToggleBtn = document.getElementById('timerToggleBtn');
+  const timerToggleHint = document.getElementById('timerToggleHint');
+  const openBtn = document.getElementById('openBtn');
+  const closeBtn = document.getElementById('closeBtn');
+  const devTapBtn = document.getElementById('devTapBtn');
+  const devBtn = document.getElementById('devBtn');
+  const slotPickerModal = document.getElementById('slotPickerModal');
+  const slotPickerList = document.getElementById('slotPickerList');
+  const slotPickerClose = document.getElementById('slotPickerClose');
+  const startPicker = mkTimeSelect();
+  const endPicker = mkTimeSelect();
+  let devTapCount = 0;
+  let devTapTimer = 0;
+  let selectedIndex = 0;
+  let syncEditor = false;
+  let currentMode = null;
+  let timerBusy = false;
+  let lastScheduleJson = null;
+
+  function setStatus(kind, text){
+    msgEl.textContent = text || '';
+    if (kind === 'ok') msgEl.style.color = '#0a8754';
+    else if (kind === 'busy') msgEl.style.color = '#1877f2';
+    else if (kind === 'err') msgEl.style.color = '#c62828';
+    else msgEl.style.color = '#4b5b6a';
+  }
+
+  const AP_BASE = 'http://192.168.4.1';
+  const LAST_BASE_KEY = 'hmk_last_base_v1';
+  let lastResolvedBase = loadLastResolvedBase();
+  let statusBase = '';
+
+  function saveIp(ip){
+    if (ip === '') { localStorage.removeItem('hmk_ip'); return; }
+    if (ip) localStorage.setItem('hmk_ip', ip);
+  }
+  function getIp(){ return localStorage.getItem('hmk_ip') || ''; }
+
+  function saveLastResolvedBase(base){
+    if(!base) return;
+    try{ localStorage.setItem(LAST_BASE_KEY, String(base)); }catch(e){}
+  }
+
+  function loadLastResolvedBase(){
+    try{
+      const raw = String(localStorage.getItem(LAST_BASE_KEY) || '').trim();
+      if(!/^https?:\/\/(\d+\.){3}\d+$/i.test(raw)) return '';
+      return raw;
+    }catch(e){
+      return '';
+    }
+  }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    return String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = (b)=>{ if(b && !out.includes(b)) out.push(b); };
+    const ip = normalizeHost(getIp());
+    let currentHost = '';
+    try{ currentHost = normalizeHost(location.hostname || ''); }catch(e){}
+    const currentBase = (currentHost && /^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+    const ipBase = (ip && ip !== '192.168.4.1') ? ('http://' + ip) : '';
+
+    if(currentBase === AP_BASE || lastResolvedBase === AP_BASE) add(AP_BASE);
+    add(currentBase);
+    if(lastResolvedBase && lastResolvedBase !== currentBase && lastResolvedBase !== AP_BASE) add(lastResolvedBase);
+    if(ipBase && ipBase !== currentBase && ipBase !== lastResolvedBase) add(ipBase);
+    add(AP_BASE);
+    return out;
+  }
+
+  async function fetchWithTimeout(url, opt, ms){
+    const ctrl = new AbortController();
+    const id = setTimeout(()=>ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, opt||{}, {signal: ctrl.signal}));
+    }finally{
+      clearTimeout(id);
+    }
+  }
+
+  async function smartFetch(path, opt, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+    for(const base of bases){
+      const url = base + path;
+      const ms = base === AP_BASE
+        ? ((timeouts && timeouts.ap) || 900)
+        : ((timeouts && timeouts.ip) || 2000);
+      try{
+        const res = await fetchWithTimeout(url, opt || {}, ms);
+        if(!res.ok){
+          lastErr = new Error('HTTP ' + res.status);
+          continue;
+        }
+        try{
+          const u = new URL(url);
+          const host = u.hostname;
+          if(host && host !== '192.168.4.1') saveIp(host);
+        }catch(e){}
+        lastResolvedBase = base;
+        saveLastResolvedBase(base);
+        return res;
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('無法連線到設備');
+  }
+
+  async function smartFetchWithBase(path, opt, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+    for(const base of bases){
+      const url = base + path;
+      const ms = base === AP_BASE
+        ? ((timeouts && timeouts.ap) || 900)
+        : ((timeouts && timeouts.ip) || 2000);
+      try{
+        const res = await fetchWithTimeout(url, opt || {}, ms);
+        if(!res.ok){
+          lastErr = new Error('HTTP ' + res.status);
+          continue;
+        }
+        try{
+          const u = new URL(url);
+          const host = u.hostname;
+          if(host && host !== '192.168.4.1') saveIp(host);
+        }catch(e){}
+        lastResolvedBase = base;
+        saveLastResolvedBase(base);
+        return { res, base };
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('無法連線到設備');
+  }
+
+  async function loadStatusFromBase(base){
+    if(!base) throw new Error('no base');
+    const ms = (base === AP_BASE) ? 700 : 1500;
+    const r = await fetchWithTimeout(base + '/status?_=' + Date.now(), {cache:'no-store'}, ms);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (typeof (j && j.m) === 'undefined') throw new Error('bad status');
+    statusBase = base;
+    lastResolvedBase = base;
+    saveLastResolvedBase(base);
+    currentMode = Number(j && j.m);
+    updateTimerToggle();
+    return j;
+  }
+
+  // POST 專用：允許非 2xx 回應（如 409）也回傳，不跳過
+  async function smartPost(path, opt, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+    for(const base of bases){
+      const url = base + path;
+      const ms = base === AP_BASE
+        ? ((timeouts && timeouts.ap) || 3000)
+        : ((timeouts && timeouts.ip) || 5000);
+      try{
+        const res = await fetchWithTimeout(url, opt || {}, ms);
+        // POST 成功連到設備就回傳（即使 409 等也是設備回的）
+        try{
+          const u = new URL(url);
+          const host = u.hostname;
+          if(host && host !== '192.168.4.1') saveIp(host);
+        }catch(e){}
+        lastResolvedBase = base;
+        saveLastResolvedBase(base);
+        return res;
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('無法連線到設備');
+  }
+
+  const alertModal = document.getElementById('alertModal');
+  const alertTitle = document.getElementById('alertTitle');
+  const alertBody  = document.getElementById('alertBody');
+  const alertOk    = document.getElementById('alertOk');
+  let alertAfter = null;
+
+  function showAlert(title, html, after){
+    alertTitle.textContent = title || '提醒';
+    alertBody.innerHTML = html || '';
+    alertAfter = (typeof after === 'function') ? after : null;
+    alertModal.classList.add('show');
+    alertModal.setAttribute('aria-hidden','false');
+  }
+  function hideAlert(){
+    alertModal.classList.remove('show');
+    alertModal.setAttribute('aria-hidden','true');
+    const cb = alertAfter; alertAfter = null;
+    if (cb) cb();
+  }
+  alertOk.addEventListener('click', hideAlert);
+  alertModal.addEventListener('click', (e)=>{ if(e.target===alertModal) hideAlert(); });
+
+
+  function pad2(n){ return String(n).padStart(2,'0'); }
+
+  function goHome(){
+    const targetOrigin = (location.origin && location.origin !== 'null') ? location.origin : '*';
+    try{
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage('gohome', targetOrigin);
+        return;
+      }
+    }catch(e){}
+    const v = encodeURIComponent(String(window.HMK_VERSION || '13159'));
+    location.href = './index.html?v=' + v + '&_t=' + encodeURIComponent(String(Date.now()));
+  }
+
+  function normalizeTime(v, fallback){
+    const text = String(v || '').trim();
+    if (!/^\d{2}:\d{2}$/.test(text)) return fallback || '00:00';
+    return text;
+  }
+
+  function parseHM(v){
+    const text = normalizeTime(v, '00:00');
+    const parts = text.split(':');
+    const hh = Number(parts[0]);
+    const mm = Number(parts[1]);
+    if (!isFinite(hh) || !isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return -1;
+    return hh * 60 + mm;
+  }
+
+  function mkTimeSelect(){
+    const wrap = document.createElement('div');
+    wrap.className = 'timeShell';
+
+    const inner = document.createElement('div');
+    inner.className = 'timeShellInner';
+
+    const selH = document.createElement('select');
+    for(let h=0; h<24; h++){
+      const o = document.createElement('option');
+      o.value = pad2(h);
+      o.textContent = pad2(h);
+      selH.appendChild(o);
+    }
+
+    const colon = document.createElement('div');
+    colon.className = 'timeColon';
+    colon.textContent = ':';
+
+    const selM = document.createElement('select');
+    for(let m=0; m<60; m++){
+      const o = document.createElement('option');
+      o.value = pad2(m);
+      o.textContent = pad2(m);
+      selM.appendChild(o);
+    }
+
+    inner.appendChild(selH);
+    inner.appendChild(colon);
+    inner.appendChild(selM);
+    wrap.appendChild(inner);
+
+    function set(v){
+      if(!v || v.indexOf(':') < 0) { selH.value='00'; selM.value='00'; return; }
+      const a = v.split(':');
+      selH.value = (a[0] || '00').padStart(2,'0');
+      selM.value = (a[1] || '00').padStart(2,'0');
+    }
+    function get(){ return (selH.value||'00') + ':' + (selM.value||'00'); }
+
+    return { wrap, set, get, selH, selM };
+  }
+
+  function onTimePartChanged(){
+    if (syncEditor) return;
+    const row = rows[selectedIndex];
+    row.start = startPicker.get();
+    row.end = endPicker.get();
+    updateRowVisual(row);
+    setStatus('busy', row.label + ' 已變更，按儲存後送出');
+  }
+
+  function formatRangeText(row){
+    return normalizeTime(row.start, '00:00') + '-' + normalizeTime(row.end, '00:00');
+  }
+
+  function updateTimerToggle(){
+    const running = Number(currentMode) === 2;
+    timerToggleBtn.textContent = running ? '啟動中' : '關閉中';
+    timerToggleBtn.classList.toggle('running', running);
+    timerToggleBtn.disabled = timerBusy;
+    timerToggleHint.textContent = running
+      ? '目前為定時模式，按下可關閉'
+      : '目前未啟用定時模式，按下可啟動';
+    openBtn?.classList.toggle('active', running);
+    closeBtn?.classList.toggle('active', !running);
+    openBtn?.setAttribute('aria-pressed', running ? 'true' : 'false');
+    closeBtn?.setAttribute('aria-pressed', running ? 'false' : 'true');
+  }
+
+  function updateRowVisual(row){
+    if (row.summaryEl) {
+      row.summaryEl.classList.toggle('isEnabled', !!row.enabled);
+      row.summaryEl.classList.toggle('isDisabled', !row.enabled);
+      row.summaryEl.classList.toggle('isSelected', row.index === selectedIndex);
+      const st = row.summaryEl.querySelector('.slotStatus');
+      const tm = row.summaryEl.querySelector('.slotTime');
+      if (st) st.textContent = row.enabled ? '啟用' : '關閉';
+      if (tm) tm.textContent = formatRangeText(row);
+    }
+    if (row.toggleEl) {
+      row.toggleEl.textContent = row.enabled ? '✓' : '✕';
+      row.toggleEl.classList.toggle('disabled', !row.enabled);
+      row.toggleEl.classList.toggle('selected', row.index === selectedIndex);
+      row.toggleEl.setAttribute('aria-pressed', row.enabled ? 'true' : 'false');
+      row.toggleEl.setAttribute('aria-label', row.label + (row.enabled ? ' 已啟用' : ' 已關閉'));
+    }
+  }
+
+  function renderAllRows(){
+    rows.forEach(updateRowVisual);
+  }
+
+  function syncEditorFromSelected(){
+    syncEditor = true;
+    slotSelectBtn.textContent = rows[selectedIndex].label;
+    startPicker.set(rows[selectedIndex].start);
+    endPicker.set(rows[selectedIndex].end);
+    syncEditor = false;
+    renderAllRows();
+  }
+
+  function selectRow(index){
+    const next = Number(index);
+    if (!isFinite(next) || next < 0 || next >= rows.length) return;
+    selectedIndex = next;
+    syncEditorFromSelected();
+  }
+
+  function toggleRow(index){
+    selectRow(index);
+    rows[index].enabled = !rows[index].enabled;
+    renderAllRows();
+    setStatus('busy', rows[index].label + ' 已變更，按儲存後送出');
+  }
+
+  function buildUi(){
+    startPickerHost.appendChild(startPicker.wrap);
+    endPickerHost.appendChild(endPicker.wrap);
+
+    slotStrip.innerHTML = '';
+    slotToggleRow.innerHTML = '';
+
+    rows.forEach((row)=>{
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'slotCard';
+      card.innerHTML = '<div class="slotName"></div><div class="slotStatus"></div><div class="slotTime"></div>';
+      card.querySelector('.slotName').textContent = row.shortLabel;
+      card.addEventListener('click', ()=> selectRow(row.index));
+      slotStrip.appendChild(card);
+      row.summaryEl = card;
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'stateBtn disabled';
+      toggle.addEventListener('click', ()=> toggleRow(row.index));
+      slotToggleRow.appendChild(toggle);
+      row.toggleEl = toggle;
+
+    });
+
+    startPicker.selH.addEventListener('change', onTimePartChanged);
+    startPicker.selM.addEventListener('change', onTimePartChanged);
+    endPicker.selH.addEventListener('change', onTimePartChanged);
+    endPicker.selM.addEventListener('change', onTimePartChanged);
+
+    slotSelectBtn.addEventListener('click', openSlotPicker);
+    syncEditorFromSelected();
+    updateTimerToggle();
+  }
+
+  function renderSlotPicker(){
+    slotPickerList.innerHTML = '';
+    rows.forEach((row)=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'slotPickerItem' + (row.index === selectedIndex ? ' active' : '');
+      btn.textContent = row.label;
+      btn.addEventListener('click', ()=>{
+        selectRow(row.index);
+        closeSlotPicker();
+      });
+      slotPickerList.appendChild(btn);
+    });
+  }
+
+  function openSlotPicker(){
+    renderSlotPicker();
+    slotPickerModal.classList.add('show');
+    slotPickerModal.setAttribute('aria-hidden', 'false');
+    slotSelectBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSlotPicker(){
+    slotPickerModal.classList.remove('show');
+    slotPickerModal.setAttribute('aria-hidden', 'true');
+    slotSelectBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  slotPickerClose.addEventListener('click', closeSlotPicker);
+  slotPickerModal.addEventListener('click', (e)=>{ if(e.target===slotPickerModal) closeSlotPicker(); });
+
+  function applyScheduleToUi(items){
+    lastScheduleJson = items || [];
+    const hasSterilizeSlot = Array.isArray(items) && items.length >= 4;
+    rows.forEach((row)=>{
+      const srcIndex = hasSterilizeSlot ? (row.index + 1) : row.index;
+      const src = items[srcIndex] || {};
+      row.enabled = !!src.enabled;
+      row.start = normalizeTime(src.start, '00:00');
+      row.end = normalizeTime(src.end, '00:00');
+    });
+    syncEditorFromSelected();
+  }
+
+  async function loadSchedule(){
+    const r = await smartFetch('/api/schedule', {cache:'no-store'}, {ap:900, ip:2000});
+    const j = await r.json();
+    if (!j || !j.items) throw new Error('bad json');
+    applyScheduleToUi(j.items);
+    return j;
+  }
+
+  async function loadBoardSchedule(){
+    const r = await smartFetch('/api/boardsched', {cache:'no-store'}, {ap:900, ip:2000});
+    const j = await r.json();
+    if (!j) throw new Error('bad json');
+    if (Array.isArray(j.items)) {
+      for(let i=0;i<rows.length;i++){
+        const it = j.items[i] || {};
+        if (typeof it.enabled !== 'undefined') rows[i].enabled = !!it.enabled;
+        if (it.start) rows[i].start = normalizeTime(it.start === '--:--' ? '00:00' : it.start, '00:00');
+        if (it.end) rows[i].end = normalizeTime(it.end === '--:--' ? '00:00' : it.end, '00:00');
+      }
+      syncEditorFromSelected();
+    }
+    return j;
+  }
+
+  async function loadStatus(){
+    const got = await smartFetchWithBase('/status?_=' + Date.now(), {cache:'no-store'}, {ap:700, ip:1500});
+    const r = got.res;
+    const j = await r.json();
+    if (typeof (j && j.m) === 'undefined') throw new Error('bad status');
+    statusBase = got.base;
+    currentMode = Number(j && j.m);
+    updateTimerToggle();
+    return j;
+  }
+
+  // ===== 與遙控器頁完全一致的 quickPost + 同步迴圈 =====
+  // remote.html 的 quickPost：smartFetch 嘗試所有候選基址，無 mode:'no-cors'
+  function quickPost(path){
+    smartFetch(path, {method:'POST', cache:'no-store'}, {ap:450, ip:900}).catch(()=>{});
+  }
+
+  // 不碰全域狀態的 status 讀取（供 sync loop 使用，避免覆蓋樂觀更新）
+  async function readStatusQuiet(){
+    const bases = candidateBases();
+    for(const base of bases){
+      const ms = (base === AP_BASE) ? 700 : 1500;
+      try{
+        const r = await fetchWithTimeout(base + '/status?_=' + Date.now(), {cache:'no-store'}, ms);
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (typeof (j && j.m) === 'undefined') continue;
+        return j;
+      }catch(e){}
+    }
+    return null;
+  }
+
+  async function syncTimerMode(targetMode, postPath){
+    const SYNC_TIMEOUT = 8000;
+    const RESEND_INTERVAL = 2200;
+    const POLL_INTERVAL = 600;
+    const started = Date.now();
+    let lastPostAt = started;
+
+    // 給設備處理時間（/shutdown 內有 delay(500) + RS485 寫入共約 930ms）
+    await new Promise(ok => setTimeout(ok, 900));
+
+    while (Date.now() - started < SYNC_TIMEOUT) {
+      // 用不碰全域的 readStatusQuiet，避免把樂觀更新的 currentMode 打回舊值
+      try{
+        const j = await readStatusQuiet();
+        if (j && Number(j.m) === Number(targetMode)) {
+          // 確認成功：此時才同步全域狀態
+          currentMode = Number(j.m);
+          updateTimerToggle();
+          return true;
+        }
+      }catch(e){}
+
+      // 狀態不符 → 每 2.2 秒重送一次指令
+      if (Date.now() - lastPostAt >= RESEND_INTERVAL) {
+        quickPost(postPath);
+        lastPostAt = Date.now();
+      }
+
+      await new Promise(ok => setTimeout(ok, POLL_INTERVAL));
+    }
+
+    // 最後再讀一次
+    try{
+      const j = await readStatusQuiet();
+      if (j && Number(j.m) === Number(targetMode)) {
+        currentMode = Number(j.m);
+        updateTimerToggle();
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  async function toggleTimerMode(){
+    if (timerBusy) return;
+    timerBusy = true;
+    try{
+      // 先讀狀態確認當前模式（使用 smartFetchWithBase 嘗試所有候選基址）
+      try{ await loadStatus(); }catch(e){}
+
+      const turnOn = Number(currentMode) !== 2;
+      if (turnOn && !hasAnyEnabledTimerSlot()) {
+        showAlert('提醒', '請先至少啟用時段1~3其中一個時段，再按「啟動」。');
+        setStatus('err', '未啟用任何時段，無法定時啟動');
+        return;
+      }
+
+      const expectedMode = turnOn ? 2 : 0;
+      const postPath = turnOn ? '/timermode' : '/shutdown';
+
+      timerToggleBtn.disabled = true;
+      timerToggleBtn.textContent = '切換中…';
+      setStatus('busy', turnOn ? '啟動中…' : '關閉中…');
+
+      // 1. 送指令（fire-and-forget，與遙控器頁 quickPost 完全一致）
+      quickPost(postPath);
+
+      // 2. 樂觀更新 UI
+      currentMode = expectedMode;
+      updateTimerToggle();
+
+      // 3. 同步迴圈：讀狀態 + 重送指令直到一致（與遙控器頁 syncDesiredState 同架構）
+      const ok = await syncTimerMode(expectedMode, postPath);
+      if (ok) {
+        setStatus('ok', turnOn ? '已切換為定時模式' : '已關閉定時模式');
+      } else {
+        setStatus('busy', '指令已送出，設備狀態回報稍慢');
+      }
+    }catch(e){
+      setStatus('busy', '指令已送出，狀態確認中');
+    }finally{
+      timerBusy = false;
+      timerToggleBtn.disabled = false;
+      updateTimerToggle();
+    }
+  }
+
+  function validateBeforeSave(){
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row.enabled) continue;
+      if (parseHM(row.start) === parseHM(row.end)) {
+        showAlert('提醒', row.label + ' 的開始與結束時間不能相同。');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function hasAnyEnabledTimerSlot(){
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i] && rows[i].enabled) return true;
+    }
+    return false;
+  }
+
+  async function postBoardScheduleBatch(){
+    const body = new URLSearchParams();
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row) continue;
+      const slotNo = i + 1;
+      body.set('en' + slotNo, row.enabled ? '1' : '0');
+      body.set('s' + slotNo, row.start);
+      body.set('e' + slotNo, row.end);
+    }
+
+    let mask = 0;
+    for (let k = 0; k < rows.length; k++) {
+      if (rows[k] && rows[k].enabled) mask |= (1 << k);
+    }
+    body.set('mask', String(mask));
+
+    await smartFetch('/api/boardsched', {
+      method:'POST',
+      cache:'no-store',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: body.toString()
+    }, {ap:1600, ip:2600});
+  }
+
+  async function saveSchedule(){
+    if (!validateBeforeSave()) return;
+    setStatus('busy', '儲存中…');
+
+    await postBoardScheduleBatch();
+
+    // 等設備處理後重讀驗證
+    await new Promise(ok => setTimeout(ok, 800));
+    try{ await loadBoardSchedule(); }catch(e){}
+    try{ await loadSchedule(); }catch(e){
+      setStatus('err', '儲存後無法讀回排程');
+      return;
+    }
+    try{ await loadStatus(); }catch(e){}
+
+    setStatus('ok', '已儲存');
+  }
+  backBtn.addEventListener('click', goHome);
+  timerToggleBtn.addEventListener('click', async ()=>{
+    try{ await toggleTimerMode(); }catch(e){ setStatus('busy', '指令已送出，狀態確認中'); }
+  });
+  openBtn?.addEventListener('click', async ()=>{
+    if (!hasAnyEnabledTimerSlot()) {
+      showAlert('提醒', '請先至少啟用時段1~3其中一個時段，再按「啟動」。');
+      setStatus('err', '未啟用任何時段，無法定時啟動');
+      return;
+    }
+
+    try{
+      if (Number(currentMode) === 2) {
+        setStatus('ok', '目前已是定時模式');
+        updateTimerToggle();
+        return;
+      }
+      await toggleTimerMode();
+    }catch(e){
+      setStatus('busy', '指令已送出，狀態確認中');
+    }
+  });
+  closeBtn?.addEventListener('click', async ()=>{
+    try{
+      quickPost('/shutdown');
+      currentMode = 0;
+      updateTimerToggle();
+      setStatus('ok', '已關閉定時模式');
+    }catch(e){
+      setStatus('busy', '指令已送出，狀態確認中');
+    }
+  });
+  document.getElementById('saveBtn').addEventListener('click', async ()=>{
+    try{ await saveSchedule(); }catch(e){ setStatus('err', '儲存後確認失敗'); }
+  });
+
+  if (devTapBtn && devBtn) {
+    devTapBtn.addEventListener('click', ()=>{
+      devTapCount++;
+      clearTimeout(devTapTimer);
+      devTapTimer = setTimeout(()=>{ devTapCount = 0; }, 1200);
+      if (devTapCount >= 3) {
+        devTapCount = 0;
+        devTapBtn.style.display = 'none';
+        devBtn.classList.add('show');
+        setStatus('ok', '已顯示開發入口');
+      }
+    });
+    devBtn.addEventListener('click', ()=>{
+      location.href = '/est.html?_=' + Date.now();
+    });
+  }
+
+
+  async function init(){
+    buildUi();
+    setStatus('busy', '讀取中…');
+    await loadSchedule();
+    try{ await loadBoardSchedule(); }catch(e){}
+    try{ await loadStatus(); }catch(e){ updateTimerToggle(); }
+    setStatus('ok', '已讀取');
+  }
+
+  init().catch(e=>{
+    setStatus('err', '載入失敗：' + (e && e.message ? e.message : String(e)));
+  });
+})();
+</script>
+</body>
+</html>
+
+
+
+
+

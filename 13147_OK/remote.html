@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>HMK 遙控器</title>
+  <meta name="theme-color" content="#1d9fbd">
+  <style>
+    :root{
+      --top:#1d9fbd;
+      --top2:#2ba8c6;
+      --cream:#f5e3a5;
+      --grid:#b8d9e3;
+      --panel:#f2f2f2;
+      --danger:#d94747;
+      --panelRadius:18px;
+      --panelLift:28px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;font-family:"Noto Sans TC",system-ui,sans-serif;background:var(--top)}
+    body{color:#fff}
+    .app{min-height:100vh;background:linear-gradient(180deg,var(--top2) 0 61%,#f2f2f2 61% 100%)}
+    .top{background:var(--top2);padding:env(safe-area-inset-top,0) 0 0;min-height:60vh;position:relative;overflow:hidden}
+    .header{height:66px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid rgba(255,255,255,.45);padding:0 16px}
+    .backBtn{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;border:0;background:transparent;color:#e8f6fb;font-size:16px;padding:8px 6px;cursor:pointer}
+    .backBtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+    .brandWrap{display:flex;align-items:center;justify-content:center;gap:0;width:100%;height:100%}
+    .brand{font-size:40px;font-weight:900;letter-spacing:.02em;line-height:1}
+    .hero{padding:10px 20px 8px;max-width:430px;margin:0 auto}
+    .realLabel{text-align:center;color:rgba(255,255,255,.82);font-size:19px;margin-top:20px}
+    .realValue{text-align:center;color:var(--cream);font-size:112px;font-weight:900;line-height:1;letter-spacing:-.06em;margin-top:6px}
+    .realValue .unit{font-size:.34em;margin-left:2px}
+    .circles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .circle{width:100%;max-width:158px;justify-self:center;aspect-ratio:1/1;border:1.4px solid rgba(255,255,255,.65);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}
+    .circle .small{font-size:17px;opacity:.95;margin-bottom:8px}
+    .circle .value{font-size:38px;font-weight:900;line-height:1.05;letter-spacing:.02em}
+    #modeValue{color:var(--cream)}
+    #setTemp{color:#fff}
+    .circle .sub{font-size:16px;color:rgba(255,255,255,.95);margin-top:8px}
+    .modeIcon{font-size:48px;line-height:1;margin-top:8px;color:rgba(255,255,255,.95);font-weight:800;letter-spacing:.02em}
+    .bottom{max-width:430px;margin:calc(-1 * var(--panelLift)) auto 0;background:var(--panel);border-top-left-radius:var(--panelRadius);border-top-right-radius:var(--panelRadius);min-height:36vh;box-shadow:0 -8px 24px rgba(0,0,0,.05);padding:18px 18px calc(22px + env(safe-area-inset-bottom,0));position:relative;overflow:hidden}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:0}
+    .btn{background:transparent;border:0;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);min-height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#25a6c4;cursor:pointer;padding:10px 4px;transition:transform .05s ease,opacity .12s ease}
+    .btn:active{transform:scale(.97)}
+    .btn.flash{opacity:.68}
+    .btn:nth-child(3n){border-right:0}
+    .btn svg{width:58px;height:58px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .btn svg.fireIcon{width:60px;height:68px;fill:currentColor;stroke:none}
+    .btn svg.germIcon{width:62px;height:62px;fill:none;stroke:none}
+    .btn svg.germIcon .germStroke{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .btn svg.germIcon .germSolid{fill:currentColor;stroke:none}
+    .btn .label{font-size:18px;color:#8fb6c2}
+    .abMask{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
+    .abBox{background:#fff;color:#26343a;border-radius:18px;max-width:320px;width:100%;padding:20px 18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+    .abTitle{font-size:20px;font-weight:800;color:var(--danger);margin:0 0 10px}
+    .abMsg{font-size:15px;line-height:1.65;margin:0 0 18px}
+    .abBtn{min-width:120px;border:0;border-radius:999px;padding:10px 16px;background:#1d9fbd;color:#fff;font-size:15px;cursor:pointer}
+    @media (min-width:480px){
+      .app{display:flex;flex-direction:column;align-items:center}
+      .top,.bottom{width:430px}
+      .top{border-top-left-radius:18px;border-top-right-radius:18px;margin-top:10px}
+      .bottom{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="header">
+        <button id="backBtn" class="backBtn" type="button" aria-label="返回首頁">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          <span>遙控器</span>
+        </button>
+        <div class="brandWrap" aria-label="HMK">
+          <div class="brand">HMK</div>
+        </div>
+      </div>
+      <div class="hero">
+        <div class="realLabel">實際水溫</div>
+        <div id="realTemp" class="realValue">--<span class="unit">°C</span></div>
+        <div class="circles">
+          <div class="circle">
+            <div class="small">熱水器</div>
+            <div id="modeValue" class="value">--</div>
+            <div id="modeIcon" class="modeIcon">💤</div>
+          </div>
+          <div class="circle">
+            <div class="small">設定水溫</div>
+            <div id="setTemp" class="value">--</div>
+            <div class="sub">°C</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="grid">
+        <button class="btn" data-action="tempup" type="button">
+          <svg viewBox="0 0 24 24"><path d="M6 16l6-8 6 8"/></svg>
+          <div class="label">升溫</div>
+        </button>
+        <button class="btn" data-action="poweron" type="button">
+          <svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M7.5 5.5a8 8 0 1 0 9 0"/></svg>
+          <div class="label">開</div>
+        </button>
+        <button class="btn" data-action="tempdown" type="button">
+          <svg viewBox="0 0 24 24"><path d="M6 8l6 8 6-8"/></svg>
+          <div class="label">降溫</div>
+        </button>
+        <button class="btn" data-action="super" type="button">
+          <svg class="fireIcon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-4-2.5-6 .25 1.5-1.25 2-1.25 2C11 4 9 .5 6 0c.357 2 .5 4-2 6-1.25 1-2 2.729-2 4.5C2 14 4.686 16 8 16m0-1c-1.657 0-3-1-3-2.75 0-.75.25-2 1.25-3C6.125 10 7 10.5 7 10.5c-.375-1.25.5-3.25 2-3.5-.179 1-.25 2 1 3 .625.5 1 1.364 1 2.25C11 14 9.657 15 8 15"/></svg>
+          <div class="label">速熱</div>
+        </button>
+        <button class="btn" data-action="shutdown" type="button">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9 9l6 6"/><path d="M15 9l-6 6"/></svg>
+          <div class="label">關</div>
+        </button>
+        <button class="btn" data-action="sterilize" type="button">
+          <svg class="germIcon" viewBox="0 0 24 24" aria-hidden="true"><g class="germStroke"><circle cx="12" cy="12" r="4.9"/><path d="M12 4v2.8"/><path d="M12 17.2V20"/><path d="M4 12h2.8"/><path d="M17.2 12H20"/><path d="M6.4 6.4l2 2"/><path d="M15.6 15.6l2 2"/><path d="M17.6 6.4l-2 2"/><path d="M8.4 15.6l-2 2"/></g><g class="germSolid"><circle cx="12" cy="2.8" r="1.5"/><circle cx="12" cy="21.2" r="1.5"/><circle cx="2.8" cy="12" r="1.5"/><circle cx="21.2" cy="12" r="1.5"/><circle cx="5.6" cy="5.6" r="1.45"/><circle cx="18.4" cy="18.4" r="1.45"/><circle cx="18.4" cy="5.6" r="1.45"/><circle cx="5.6" cy="18.4" r="1.45"/><circle cx="10" cy="10.4" r=".82"/><circle cx="14.4" cy="10.7" r=".82"/><circle cx="12" cy="14.4" r="1.18"/></g></svg>
+          <div class="label">殺菌</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="abnormalMask" class="abMask">
+    <div class="abBox">
+      <div class="abTitle">連線異常</div>
+      <p id="abnormalMsg" class="abMsg">設備狀態未同步，請再操作一次。</p>
+      <button id="abnormalBtn" class="abBtn" type="button">知道了</button>
+    </div>
+  </div>
+
+  <script>
+  const $ = s => document.querySelector(s);
+  const STORAGE_KEY = 'hmk_remote_desired_v10';
+  const SYNC_TIMEOUT_MS = 10000;
+  const LAST_BASE_KEY = 'hmk_last_base_v1';
+  let lastResolvedBase = loadLastResolvedBase();
+  let deviceState = {m:null, heat:null, heatValid:null, tSet:null, tUp:null};
+  let desiredState = loadDesiredState();
+  let syncTimer = null;
+  let syncInProgress = false;
+  let syncRequested = false;
+  let startupFinished = false;
+  let tempFlushTimer = null;
+  let localIntentUntil = 0;
+  let passiveRefreshBusy = false;
+  const AP_BASE = 'http://192.168.4.1';
+  const LAST_VIEW_KEY = 'hmk_last_view_v1';
+  const LAST_VIEW_TS_KEY = 'hmk_last_view_ts_v1';
+
+  function saveIp(ip){
+    if (ip === '') { localStorage.removeItem('hmk_ip'); return; }
+    if (ip) localStorage.setItem('hmk_ip', ip);
+  }
+  function getIp(){ return localStorage.getItem('hmk_ip') || ''; }
+
+  function saveLastResolvedBase(base){
+    if(!base) return;
+    try{ localStorage.setItem(LAST_BASE_KEY, String(base)); }catch(e){}
+  }
+
+  function loadLastResolvedBase(){
+    try{
+      const raw = String(localStorage.getItem(LAST_BASE_KEY) || '').trim();
+      if(!/^https?:\/\/(\d+\.){3}\d+$/i.test(raw)) return '';
+      return raw;
+    }catch(e){
+      return '';
+    }
+  }
+
+  function rememberShellView(view){
+    try{
+      localStorage.setItem(LAST_VIEW_KEY, String(view || 'index'));
+      localStorage.setItem(LAST_VIEW_TS_KEY, String(Date.now()));
+    }catch(e){}
+  }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    return String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = (b)=>{ if(b && !out.includes(b)) out.push(b); };
+    const ip = normalizeHost(getIp());
+    let currentHost = '';
+    try{
+      currentHost = normalizeHost(location.hostname || '');
+    }catch(e){}
+    const currentBase = (currentHost && /^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+    const ipBase = (ip && ip !== '192.168.4.1') ? ('http://' + ip) : '';
+
+    if(currentBase === AP_BASE || lastResolvedBase === AP_BASE) add(AP_BASE);
+    add(currentBase);
+    if(lastResolvedBase && lastResolvedBase !== currentBase && lastResolvedBase !== AP_BASE) add(lastResolvedBase);
+    if(ipBase && ipBase !== currentBase && ipBase !== lastResolvedBase) add(ipBase);
+    add(AP_BASE);
+    return out;
+  }
+
+  async function fetchWithTimeout(url, options, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, options || {}, {signal: ctrl.signal}));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  async function smartFetch(path, options, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+    for(const base of bases){
+      const url = base + path;
+      const timeoutMs = base === AP_BASE
+        ? ((timeouts && timeouts.ap) || 650)
+        : ((timeouts && timeouts.ip) || 1500);
+      try{
+        const res = await fetchWithTimeout(url, options || {}, timeoutMs);
+        if(!res.ok){
+          lastErr = new Error('HTTP ' + res.status);
+          continue;
+        }
+        try{
+          const u = new URL(url);
+          const host = u.hostname;
+          if(host && host !== '192.168.4.1') saveIp(host);
+        }catch(e){}
+        lastResolvedBase = base;
+        saveLastResolvedBase(base);
+        return {res, base};
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('fetch failed');
+  }
+
+  function clampSetTemp(v){
+    const n = Number(v);
+    if(!isFinite(n)) return null;
+    return Math.max(40, Math.min(70, Math.round(n)));
+  }
+
+  function isHeatingOn(heat, heatValid){
+    if(heatValid != null && Number(heatValid) === 0) return false;
+    if(heat === true) return true;
+    if(typeof heat === 'string'){
+      const s = heat.trim().toLowerCase();
+      if(s === '1' || s === 'true' || s === 'on') return true;
+      if(s === '0' || s === 'false' || s === 'off') return false;
+    }
+    return Number(heat) === 1;
+  }
+
+  function modeText(m){
+    if(Number(m) === 1) return '自動';
+    if(Number(m) === 2) return '定時';
+    if(Number(m) === 0) return '關閉';
+    return '--';
+  }
+
+  function actualIcon(){
+    return (Number(deviceState.m) === 0) ? '💤' : (isHeatingOn(deviceState.heat, deviceState.heatValid) ? '🔥' : '💤');
+  }
+
+  function inferTypeFromDisplay(m, tSet, icon){
+    const clamped = clampSetTemp(tSet);
+    if(Number(m) === 0) return 'shutdown';
+    if(Number(m) === 1 && clamped === 70 && icon === '🔥') return 'super';
+    if(Number(m) === 1 && clamped === 65 && icon === '🔥') return 'sterilize';
+    if(Number(m) === 2) return 'timer';
+    if(Number(m) === 1) return 'manual';
+    return 'manual';
+  }
+
+  function defaultDesiredFromDevice(){
+    const icon = actualIcon();
+    return {
+      m: deviceState.m,
+      tSet: clampSetTemp(deviceState.tSet),
+      type: inferTypeFromDisplay(deviceState.m, deviceState.tSet, icon),
+      enforceHeat: false
+    };
+  }
+
+  function normalizeDesired(raw){
+    if(!raw || typeof raw !== 'object') return null;
+    const out = {
+      m: (raw.m == null ? null : Number(raw.m)),
+      tSet: clampSetTemp(raw.tSet),
+      type: String(raw.type || ''),
+      enforceHeat: !!raw.enforceHeat
+    };
+    if(!out.type){
+      out.type = inferTypeFromDisplay(out.m, out.tSet, out.enforceHeat ? '🔥' : '💤');
+    }
+    return out;
+  }
+
+  function loadDesiredState(){
+    try{
+      return normalizeDesired(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'));
+    }catch(e){
+      return null;
+    }
+  }
+
+  function saveDesiredState(){
+    try{
+      if(desiredState) localStorage.setItem(STORAGE_KEY, JSON.stringify(desiredState));
+    }catch(e){}
+  }
+
+  function getDisplayState(){
+    const display = desiredState ? Object.assign({}, desiredState) : defaultDesiredFromDevice();
+    let icon;
+    if(Number(display.m) === 0){
+      icon = '💤';
+    }else if(display.enforceHeat){
+      icon = '🔥';
+    }else{
+      icon = actualIcon();
+    }
+    return {
+      m: display.m,
+      tSet: clampSetTemp(display.tSet),
+      icon,
+      tUp: deviceState.tUp,
+      type: inferTypeFromDisplay(display.m, display.tSet, icon)
+    };
+  }
+
+  function markLocalIntent(ms){
+    localIntentUntil = Date.now() + (ms || 4000);
+  }
+
+  function acceptExternalSetTemp(actual){
+    if(!desiredState) return false;
+    if(syncInProgress) return false;
+    if(Date.now() < localIntentUntil) return false;
+    if(desiredState.enforceHeat) return false;
+
+    const haveSet = clampSetTemp(actual && actual.tSet);
+    const wantSet = clampSetTemp(desiredState.tSet);
+
+    if(haveSet == null || wantSet == null) return false;
+    if(haveSet === wantSet) return false;
+
+    if(desiredState.m != null && Number(actual.m) !== Number(desiredState.m)) return false;
+
+    desiredState.tSet = haveSet;
+    desiredState.type = inferTypeFromDisplay(actual.m, actual.tSet, actualIcon());
+    desiredState.enforceHeat = false;
+    saveDesiredState();
+    applyUi();
+    return true;
+  }
+
+  function applyUi(){
+    const d = getDisplayState();
+    const realN = Number(deviceState.tUp);
+    $('#realTemp').innerHTML = (isFinite(realN) ? Math.round(realN) : '--') + '<span class="unit">°C</span>';
+    $('#modeValue').textContent = modeText(d.m);
+    $('#modeIcon').textContent = d.icon;
+    const setN = clampSetTemp(d.tSet);
+    $('#setTemp').textContent = (setN != null) ? String(setN) : '--';
+  }
+
+  function flashButton(btn){
+    if(!btn) return;
+    btn.classList.add('flash');
+    clearTimeout(btn._flashTimer);
+    btn._flashTimer = setTimeout(()=>btn.classList.remove('flash'), 140);
+  }
+
+  function showAbnormal(msg){
+    $('#abnormalMsg').textContent = msg || '連線異常，請再試一次。';
+    $('#abnormalMask').style.display = 'flex';
+  }
+  function hideAbnormal(){
+    $('#abnormalMask').style.display = 'none';
+  }
+
+  function coreMatchesDesired(actual){
+    if(!desiredState) return true;
+    if(desiredState.type !== 'timer' && desiredState.m != null && Number(actual.m) !== Number(desiredState.m)) return false;
+    const wantSet = clampSetTemp(desiredState.tSet);
+    const haveSet = clampSetTemp(actual.tSet);
+    if(wantSet != null && haveSet != null && wantSet !== haveSet) return false;
+    if(desiredState.enforceHeat && !isHeatingOn(actual.heat, actual.heatValid)) return false;
+    return true;
+  }
+
+  function buildCommands(actual){
+    if(!desiredState) return [];
+    const cmds = [];
+    const wantSet = clampSetTemp(desiredState.tSet);
+    const haveSet = clampSetTemp(actual.tSet);
+
+    if(desiredState.type === 'shutdown'){
+      if(wantSet != null && haveSet != null && wantSet !== haveSet){
+        cmds.push({kind:'settemp', t: wantSet});
+      }
+      if(Number(actual.m) !== 0) cmds.push('/shutdown');
+      return cmds;
+    }
+
+    if(desiredState.type === 'super'){
+      if(Number(actual.m) !== 1 || wantSet !== 70 || haveSet !== 70 || (desiredState.enforceHeat && !isHeatingOn(actual.heat, actual.heatValid))){
+        cmds.push('/super');
+      }
+      return cmds;
+    }
+
+    if(desiredState.type === 'sterilize'){
+      if(Number(actual.m) !== 1 || wantSet !== 65 || haveSet !== 65 || (desiredState.enforceHeat && !isHeatingOn(actual.heat, actual.heatValid))){
+        cmds.push('/sterilize');
+      }
+      return cmds;
+    }
+
+    if(Number(desiredState.m) === 1 && Number(actual.m) !== 1){
+      cmds.push('/poweron');
+    } else if(Number(desiredState.m) === 0 && Number(actual.m) !== 0){
+      cmds.push('/shutdown');
+    }
+
+    if(wantSet != null && haveSet != null && desiredState.type !== 'timer' && wantSet !== haveSet){
+      cmds.push({kind:'settemp', t: wantSet});
+    }
+
+    if(desiredState.enforceHeat && Number(desiredState.m) === 1 && !isHeatingOn(actual.heat, actual.heatValid) && !cmds.includes('/poweron')){
+      cmds.unshift('/poweron');
+    }
+
+    return cmds;
+  }
+
+  function quickPost(path){
+    smartFetch(path, {method:'POST', cache:'no-store'}, {ap:450, ip:900}).catch(()=>{});
+  }
+
+  function quickSetTemp(t){
+    const ct = clampSetTemp(t);
+    if(ct == null) return;
+    smartFetch('/settemp', {
+      method:'POST',
+      cache:'no-store',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'t=' + encodeURIComponent(ct)
+    }, {ap:500, ip:1000}).catch(()=>{});
+  }
+
+  async function fetchStatus(){
+    const st = await smartFetch('/status?_=' + Date.now(), {cache:'no-store'}, {ap:700, ip:1500});
+    const j = await st.res.json();
+    deviceState = {m:j.m, heat:j.heat, heatValid:j.heatValid, tSet:j.tSet, tUp:j.tUp};
+    return deviceState;
+  }
+
+  async function refreshFromResume(){
+    if(passiveRefreshBusy || syncInProgress) return;
+    passiveRefreshBusy = true;
+    try{
+      await fetchStatus();
+      if(!desiredState){
+        desiredState = defaultDesiredFromDevice();
+        saveDesiredState();
+      }
+      applyUi();
+      hideAbnormal();
+    }catch(e){}
+    finally {
+      passiveRefreshBusy = false;
+    }
+  }
+
+  async function sendCommand(cmd){
+    let lastErr = null;
+    const tries = [
+      {ap:800, ip:1400},
+      {ap:1200, ip:2000}
+    ];
+    for(const tm of tries){
+      try{
+        if(typeof cmd === 'string'){
+          await smartFetch(cmd, {method:'POST', cache:'no-store'}, tm);
+        }else if(cmd && cmd.kind === 'settemp'){
+          await smartFetch('/settemp', {
+            method:'POST',
+            cache:'no-store',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:'t=' + encodeURIComponent(clampSetTemp(cmd.t))
+          }, tm);
+        }else{
+          throw new Error('unknown command');
+        }
+        return true;
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('post failed');
+  }
+
+  async function sendCommandsSequential(commands){
+    for(let i=0;i<commands.length;i++){
+      await sendCommand(commands[i]);
+      if(i < commands.length - 1){
+        await new Promise(r=>setTimeout(r, 45));
+      }
+    }
+  }
+
+  function scheduleSync(delay){
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(()=>syncDesiredState(), delay == null ? 20 : delay);
+  }
+
+  async function syncDesiredState(){
+    if(syncInProgress){
+      syncRequested = true;
+      return;
+    }
+    syncInProgress = true;
+    let ok = false;
+    const startedAt = Date.now();
+    try{
+      while(Date.now() - startedAt < SYNC_TIMEOUT_MS){
+        const actual = await fetchStatus();
+
+        if(acceptExternalSetTemp(actual)){
+          ok = true;
+          break;
+        }
+
+        if(!desiredState){
+          desiredState = defaultDesiredFromDevice();
+          saveDesiredState();
+          applyUi();
+          hideAbnormal();
+          ok = true;
+          break;
+        }
+
+        if(coreMatchesDesired(actual)){
+          desiredState.enforceHeat = false;
+          saveDesiredState();
+          applyUi();
+          hideAbnormal();
+          ok = true;
+          break;
+        }
+
+        const commands = buildCommands(actual);
+        if(!commands.length){
+          await new Promise(r=>setTimeout(r, 80));
+          continue;
+        }
+
+        await sendCommandsSequential(commands);
+        await new Promise(r=>setTimeout(r, 90));
+      }
+
+      if(!ok){
+        try{
+          const actual = await fetchStatus();
+          if(desiredState && coreMatchesDesired(actual)){
+            desiredState.enforceHeat = false;
+            saveDesiredState();
+            applyUi();
+            hideAbnormal();
+            ok = true;
+          }
+        }catch(e){}
+      }
+
+      if(!ok && desiredState){
+        applyUi();
+        showAbnormal('連線異常，請再試一次。');
+      }
+    }catch(e){
+      applyUi();
+      showAbnormal('連線異常，請再試一次。');
+    } finally {
+      syncInProgress = false;
+      if(syncRequested){
+        syncRequested = false;
+        scheduleSync(20);
+      }
+    }
+  }
+
+  function ensureDesired(){
+    if(!desiredState){
+      desiredState = defaultDesiredFromDevice();
+    }
+    desiredState = normalizeDesired(desiredState);
+  }
+
+  function currentDisplayForDecision(){
+    return getDisplayState();
+  }
+
+  function applyImmediateAction(action){
+    ensureDesired();
+    const d = currentDisplayForDecision();
+
+    if(action === 'poweron'){
+      if(Number(d.m) === 1) return false;
+      desiredState.m = 1;
+      desiredState.type = 'manual';
+      desiredState.enforceHeat = true;
+      desiredState.tSet = clampSetTemp(desiredState.tSet == null ? (deviceState.tSet || 55) : desiredState.tSet);
+    } else if(action === 'shutdown'){
+      if(Number(d.m) === 0) return false;
+      desiredState.m = 0;
+      desiredState.type = 'shutdown';
+      desiredState.enforceHeat = false;
+      desiredState.tSet = clampSetTemp(desiredState.tSet == null ? (deviceState.tSet || 55) : desiredState.tSet);
+    } else if(action === 'super'){
+      if(Number(d.m) === 1 && Number(d.tSet) === 70 && d.icon === '🔥') return false;
+      desiredState.m = 1;
+      desiredState.tSet = 70;
+      desiredState.type = 'super';
+      desiredState.enforceHeat = true;
+    } else if(action === 'sterilize'){
+      if(Number(d.m) === 1 && Number(d.tSet) === 65 && d.icon === '🔥') return false;
+      desiredState.m = 1;
+      desiredState.tSet = 65;
+      desiredState.type = 'sterilize';
+      desiredState.enforceHeat = true;
+    } else if(action === 'tempup'){
+      const base = clampSetTemp(d.tSet == null ? (deviceState.tSet || 55) : d.tSet);
+      desiredState.tSet = clampSetTemp(base + 1);
+      if(Number(desiredState.m) === 0) desiredState.type = 'shutdown';
+      else if(Number(desiredState.m) === 2) desiredState.type = 'timer';
+      else desiredState.type = 'manual';
+    } else if(action === 'tempdown'){
+      const base = clampSetTemp(d.tSet == null ? (deviceState.tSet || 55) : d.tSet);
+      desiredState.tSet = clampSetTemp(base - 1);
+      if(Number(desiredState.m) === 0) desiredState.type = 'shutdown';
+      else if(Number(desiredState.m) === 2) desiredState.type = 'timer';
+      else desiredState.type = 'manual';
+    }
+
+    desiredState.tSet = clampSetTemp(desiredState.tSet == null ? (deviceState.tSet || 55) : desiredState.tSet);
+    saveDesiredState();
+    applyUi();
+    hideAbnormal();
+    return true;
+  }
+
+  document.querySelectorAll('.btn[data-action]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const action = btn.getAttribute('data-action');
+      flashButton(btn);
+      const changed = applyImmediateAction(action);
+      if(!changed) return;
+
+      markLocalIntent(action === 'tempup' || action === 'tempdown' ? 2500 : 5000);
+
+      if(action === 'tempup' || action === 'tempdown'){
+        clearTimeout(tempFlushTimer);
+        tempFlushTimer = setTimeout(()=>{
+          quickSetTemp(desiredState && desiredState.tSet != null ? desiredState.tSet : deviceState.tSet);
+          scheduleSync(40);
+        }, 60);
+        return;
+      }
+
+      if(action === 'poweron') quickPost('/poweron');
+      else if(action === 'shutdown') quickPost('/shutdown');
+      else if(action === 'super') quickPost('/super');
+      else if(action === 'sterilize') quickPost('/sterilize');
+
+      scheduleSync(20);
+    });
+  });
+
+  $('#backBtn')?.addEventListener('click', ()=>{
+    rememberShellView('index');
+    location.href = './index.html';
+  });
+  $('#abnormalBtn')?.addEventListener('click', hideAbnormal);
+  $('#abnormalMask')?.addEventListener('click', e=>{ if(e.target === $('#abnormalMask')) hideAbnormal(); });
+
+  const hm = location.hash.match(/ip=([\d.]+)/);
+  if(hm){
+    saveIp(hm[1]);
+    history.replaceState(null, '', location.pathname);
+  }
+
+  if(desiredState){
+    desiredState = normalizeDesired(desiredState);
+  }
+  desiredState = null;
+  rememberShellView('remote');
+  applyUi();
+
+  (async function init(){
+    try{
+      await fetchStatus();
+      desiredState = defaultDesiredFromDevice();
+      saveDesiredState();
+      applyUi();
+      startupFinished = true;
+      hideAbnormal();
+    }catch(e){
+      showAbnormal('連線異常，請再試一次。');
+    }
+  })();
+
+  setInterval(async ()=>{
+    if(passiveRefreshBusy || syncInProgress) return;
+    passiveRefreshBusy = true;
+    try{
+      await fetchStatus();
+
+      if(!desiredState){
+        desiredState = defaultDesiredFromDevice();
+        saveDesiredState();
+        applyUi();
+        return;
+      }
+
+      if(acceptExternalSetTemp(deviceState)){
+        return;
+      }
+
+      applyUi();
+    }catch(e){}
+    finally {
+      passiveRefreshBusy = false;
+    }
+  }, 1800);
+
+  window.addEventListener('pageshow', ()=>{
+    rememberShellView('remote');
+    refreshFromResume();
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) return;
+    rememberShellView('remote');
+    refreshFromResume();
+  });
+  </script>
+</body>
+</html>
