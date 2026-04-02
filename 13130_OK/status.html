@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2aa6bf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
+<title>HMK 產品狀態</title>
+<style>
+  :root{
+    --top:#279bb3;
+    --top2:#32acc5;
+    --cream:#f5e4a1;
+    --line:rgba(255,255,255,.35);
+    --panel:#f3f3f1;
+    --teal:#2aa6bf;
+    --tealDeep:#1a8ea5;
+    --ok:#e9f7f1;
+    --okText:#2aa06e;
+    --err:#fdeaea;
+    --errText:#c34f4f;
+    --shellInsetX:20px;
+    --contentInset:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    min-height:100%;
+    font-family:"Noto Sans TC",system-ui,sans-serif;
+    background:var(--top);
+  }
+  body{color:#fff}
+  .app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,var(--top2) 0 76%,var(--panel) 76% 100%);
+  }
+  .top{
+    max-width:430px;
+    flex:1 1 auto;
+    margin:0 auto;
+    padding:env(safe-area-inset-top,0) 0 0;
+  }
+  .header{
+    height:66px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    border-bottom:1px solid rgba(255,255,255,.45);
+    padding:0 16px;
+  }
+  .backBtn{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border:0;
+    background:transparent;
+    color:#e8f6fb;
+    font-size:16px;
+    padding:8px 6px;
+    cursor:pointer;
+  }
+  .backBtn svg{
+    width:26px;
+    height:26px;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:2.2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .brand{font-size:40px;font-weight:900;letter-spacing:.02em;line-height:1}
+  .hero{padding:14px var(--shellInsetX) 8px}
+  .circles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .circle{
+    width:100%;
+    max-width:160px;
+    justify-self:center;
+    aspect-ratio:1/1;
+    border:1.4px solid rgba(255,255,255,.65);
+    border-radius:50%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:12px;
+  }
+  .circle .small{font-size:17px;opacity:.95;margin-bottom:8px}
+  .circle .value{font-size:56px;font-weight:900;line-height:1.05;letter-spacing:.02em}
+  .circle .value.text{font-size:64px;color:var(--cream)}
+  .circle .sub{font-size:16px;color:rgba(255,255,255,.95);margin-top:8px}
+  .circle .okIcon{
+    margin-top:8px;
+    width:32px;
+    height:32px;
+    border:2px solid rgba(255,255,255,.95);
+    border-radius:50%;
+    color:#fff;
+    font-size:22px;
+    line-height:26px;
+    font-weight:900;
+  }
+  .list{
+    margin-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .row{
+    height:48px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:0 var(--contentInset);
+    color:rgba(255,255,255,.92);
+    letter-spacing:.01em;
+  }
+  .row .name{
+    flex:1;
+    min-width:0;
+    font-size:18px;
+    white-space:nowrap;
+    overflow:visible;
+  }
+  .stateIcon{
+    min-width:28px;
+    height:28px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    font-weight:900;
+    border:2px solid rgba(255,255,255,.95);
+    color:#fff;
+  }
+  .stateIcon.err{
+    border-color:#ffd1d1;
+    color:#ffd1d1;
+  }
+  .bottom{
+    max-width:430px;
+    margin:0 auto 0;
+    width:100%;
+    padding:20px var(--shellInsetX) calc(22px + env(safe-area-inset-bottom,0));
+    background:var(--panel);
+    color:var(--tealDeep);
+    position:sticky;
+    bottom:0;
+    z-index:2;
+  }
+  .healthCard{background:transparent;padding:0;min-height:120px}
+  .healthHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 calc(var(--contentInset) - 10px) 0 calc(var(--contentInset) + 12px)}
+  .healthTitle{font-size:20px;font-weight:900;color:var(--tealDeep);white-space:nowrap}
+  .healthOkIcon{
+    width:28px;
+    height:28px;
+    border:2px solid var(--tealDeep);
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    font-weight:900;
+    color:var(--tealDeep);
+    flex:0 0 auto;
+    margin-right:16px;
+  }
+  .healthOkIcon.err{
+    border-color:#d25a5a;
+    color:#d25a5a;
+  }
+  .healthRow{display:flex;align-items:center;gap:8px;margin-top:8px;padding:0 calc(var(--contentInset) - 10px) 0 calc(var(--contentInset) + 12px)}
+  .healthBarWrap{
+    flex:1;
+    height:22px;
+    border-radius:999px;
+    overflow:hidden;
+    background:#e9eef0;
+    border:1px solid #cfdde2;
+    position:relative;
+  }
+  .healthBar{
+    height:100%;
+    width:0%;
+    background:var(--teal);
+    transition:width .28s ease;
+  }
+  .healthText{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    color:#0f5f6e;
+    font-size:13px;
+    font-weight:800;
+    text-shadow:0 1px 0 rgba(255,255,255,.75);
+  }
+  .healthActions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+  .pillBtn{
+    border:1.5px solid #8cc4d0;
+    background:#fff;
+    color:var(--tealDeep);
+    border-radius:999px;
+    min-height:34px;
+    min-width:64px;
+    padding:0 12px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    flex:0 0 auto;
+    margin-left:-3px;
+  }
+  .detailRow{display:flex;justify-content:center;margin-top:10px}
+  .detailBtn{
+    border:1.5px solid #8cc4d0;
+    background:#fff;
+    color:var(--tealDeep);
+    border-radius:999px;
+    min-height:40px;
+    min-width:126px;
+    padding:0 24px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .msg{
+    margin-top:10px;
+    font-size:14px;
+    line-height:1.5;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:#5d8894;
+    min-height:22px;
+  }
+  .msg.err{color:var(--errText)}
+  .msg.ok{color:var(--okText)}
+  .confirmMask{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+    padding:16px;
+  }
+  .confirmMask.show{display:flex}
+  .confirmBox{
+    width:min(360px,94vw);
+    background:#fff;
+    border:1px solid #d7e8ec;
+    border-radius:18px;
+    padding:16px 16px 14px;
+    color:var(--tealDeep);
+    box-shadow:0 14px 36px rgba(0,0,0,.22);
+  }
+  .confirmTitle{font-size:18px;font-weight:900;text-align:center;margin:0 0 8px}
+  .confirmText{font-size:14px;line-height:1.6;color:#4f7d86;margin:0}
+  .confirmBtns{display:flex;gap:10px;justify-content:center;margin-top:14px}
+  .confirmBtn{
+    border:1.5px solid #8cc4d0;
+    background:#fff;
+    color:var(--tealDeep);
+    border-radius:999px;
+    min-height:36px;
+    min-width:98px;
+    padding:0 14px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .confirmBtn.primary{
+    background:var(--teal);
+    border-color:var(--teal);
+    color:#fff;
+  }
+  @media (min-width:480px){
+    .app{display:flex;flex-direction:column;align-items:center}
+    .top,.bottom{width:430px}
+    .top{border-top-left-radius:18px;border-top-right-radius:18px;margin-top:10px}
+    .bottom{border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="header">
+        <button id="backBtn" class="backBtn" type="button" aria-label="返回首頁">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          <span>產品狀態</span>
+        </button>
+        <div class="brand" aria-label="HMK">HMK</div>
+      </div>
+
+      <div class="hero">
+        <div class="circles">
+          <div class="circle">
+            <div class="small">熱水器運作</div>
+            <div id="runState" class="value text">--</div>
+            <div id="runIcon" class="okIcon">✓</div>
+          </div>
+          <div class="circle">
+            <div class="small">當月電費累計</div>
+            <div id="costValue" class="value">--</div>
+            <div class="sub">元</div>
+          </div>
+        </div>
+
+        <div id="faultList" class="list"></div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="healthCard">
+        <div class="healthHead">
+          <div class="healthTitle">電熱管健康度</div>
+          <div id="healthOkIcon" class="healthOkIcon">✓</div>
+        </div>
+        <div class="healthRow">
+          <div class="healthBarWrap">
+            <div id="healthBar" class="healthBar"></div>
+            <div id="healthText" class="healthText">--</div>
+          </div>
+          <button id="calibrateBtn" type="button" class="pillBtn">校正</button>
+        </div>
+        <div class="detailRow">
+          <button id="powerDetailBtn" type="button" class="detailBtn">電費明細</button>
+        </div>
+        <div id="msg" class="msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="resetConfirmMask" class="confirmMask" aria-hidden="true">
+    <div class="confirmBox" role="dialog" aria-modal="true" aria-labelledby="resetConfirmTitle">
+      <p id="resetConfirmTitle" class="confirmTitle">校正確認</p>
+      <p class="confirmText">此鍵為新電熱管安裝時，建立標準使用。按下後會重新建立標準，是否校正？</p>
+      <div class="confirmBtns">
+        <button id="resetCancelBtn" type="button" class="confirmBtn">取消</button>
+        <button id="resetConfirmBtn" type="button" class="confirmBtn primary">確定</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const AP_BASE = 'http://192.168.4.1';
+  let lastResolvedBase = '';
+
+  const faultDefs = [
+    {bit:0, name:'時間IC'},
+    {bit:1, name:'空燒保護'},
+    {bit:2, name:'過溫保護'},
+    {bit:4, name:'上感溫開路'},
+    {bit:5, name:'上感溫斷路'},
+    {bit:6, name:'下感溫開路'},
+    {bit:7, name:'下感溫斷路'}
+  ];
+
+  function saveIp(ip){
+    if (ip === '') { localStorage.removeItem('hmk_ip'); return; }
+    if (ip) localStorage.setItem('hmk_ip', ip);
+  }
+  function getIp(){ return localStorage.getItem('hmk_ip') || ''; }
+
+  function showMsg(text, isErr){
+    const el = $('#msg');
+    if(!el) return;
+    el.textContent = text || '';
+    el.className = 'msg ' + (isErr ? 'err' : 'ok');
+  }
+
+  function setHealthOkIcon(ok){
+    const icon = $('#healthOkIcon');
+    if(!icon) return;
+    icon.className = 'healthOkIcon' + (ok ? '' : ' err');
+    icon.textContent = ok ? '✓' : '!';
+  }
+
+  function openResetConfirm(){
+    return new Promise(resolve => {
+      const mask = $('#resetConfirmMask');
+      const okBtn = $('#resetConfirmBtn');
+      const cancelBtn = $('#resetCancelBtn');
+      if(!mask || !okBtn || !cancelBtn){ resolve(true); return; }
+
+      const close = (ans)=>{
+        mask.classList.remove('show');
+        mask.setAttribute('aria-hidden', 'true');
+        resolve(ans);
+      };
+
+      okBtn.onclick = ()=>close(true);
+      cancelBtn.onclick = ()=>close(false);
+      mask.onclick = (e)=>{ if(e.target === mask) close(false); };
+
+      mask.classList.add('show');
+      mask.setAttribute('aria-hidden', 'false');
+    });
+  }
+
+  function normalizeHost(s){
+    if(!s) return '';
+    return String(s).trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+  }
+
+  function candidateBases(){
+    const out = [];
+    const add = (b)=>{ if(b && !out.includes(b)) out.push(b); };
+    const ip = normalizeHost(getIp());
+    let currentHost = '';
+    try{ currentHost = normalizeHost(location.hostname || ''); }catch(e){}
+    const currentBase = (currentHost && /^(\d+\.){3}\d+$/.test(currentHost)) ? ('http://' + currentHost) : '';
+    const ipBase = (ip && ip !== '192.168.4.1') ? ('http://' + ip) : '';
+
+    add(currentBase);
+    if(lastResolvedBase && lastResolvedBase !== currentBase) add(lastResolvedBase);
+    if(ipBase && ipBase !== currentBase && ipBase !== lastResolvedBase) add(ipBase);
+    add(AP_BASE);
+    return out;
+  }
+
+  async function fetchWithTimeout(url, options, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), ms);
+    try{
+      return await fetch(url, Object.assign({}, options || {}, {signal: ctrl.signal}));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  async function smartFetch(path, options, timeouts){
+    const bases = candidateBases();
+    let lastErr = null;
+    for(const base of bases){
+      const timeoutMs = base === AP_BASE
+        ? ((timeouts && timeouts.ap) || 800)
+        : ((timeouts && timeouts.ip) || 1600);
+      try{
+        const res = await fetchWithTimeout(base + path, options || {}, timeoutMs);
+        if(!res.ok){
+          lastErr = new Error('HTTP ' + res.status);
+          continue;
+        }
+        try{
+          const u = new URL(base);
+          const host = u.hostname;
+          if(host && host !== '192.168.4.1') saveIp(host);
+        }catch(e){}
+        lastResolvedBase = base;
+        return {res, base};
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('fetch failed');
+  }
+
+  function getPowerKw(){
+    const mode = localStorage.getItem('pl_pwr') || '';
+    if (mode === 'custom'){
+      const x = parseFloat(localStorage.getItem('pl_pwr_custom') || '');
+      return (isFinite(x) && x > 0) ? x : 4;
+    }
+    const k = parseFloat(mode);
+    return (isFinite(k) && k > 0) ? k : 4;
+  }
+
+  function getRate(){
+    const r = parseFloat(localStorage.getItem('pl_rate') || '');
+    return (isFinite(r) && r >= 0) ? r : 1.68;
+  }
+
+  function getCurrentMonthSec(g){
+    if(!g) return 0;
+    const months = Array.isArray(g.months) ? g.months :
+                  (Array.isArray(g.monthSec) ? g.monthSec :
+                  (Array.isArray(g.monthSecs) ? g.monthSecs : []));
+    if(!months.length) return 0;
+
+    if (g.validDate && isFinite(Number(g.baseYM))){
+      const ym = Number(g.y || 0) * 12 + (Number(g.mo || 1) - 1);
+      const idx = ym - Number(g.baseYM);
+      if (idx >= 0 && idx < months.length){
+        return Number(months[idx] || 0);
+      }
+    }
+    return Number(months[months.length - 1] || 0);
+  }
+
+  function renderCost(sec){
+    const h = (Number(sec) || 0) / 3600;
+    const cost = h * getPowerKw() * getRate();
+    const value = (isFinite(cost) ? (Math.abs(cost) >= 100 ? String(Math.round(cost)) : cost.toFixed(1)) : '--');
+    $('#costValue').textContent = value;
+  }
+
+  function renderFaults(raw){
+    const list = $('#faultList');
+    if(!list) return 0;
+    list.innerHTML = '';
+
+    let errCount = 0;
+    faultDefs.forEach(fd => {
+      const isErr = (raw & (1 << fd.bit)) !== 0;
+      if(isErr) errCount++;
+
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = fd.name;
+
+      const icon = document.createElement('div');
+      icon.className = 'stateIcon' + (isErr ? ' err' : '');
+      icon.textContent = isErr ? '!' : '✓';
+
+      row.appendChild(name);
+      row.appendChild(icon);
+      list.appendChild(row);
+    });
+
+    return errCount;
+  }
+
+  function renderRunState(errCount){
+    const ok = errCount === 0;
+    const txt = $('#runState');
+    const icon = $('#runIcon');
+    if(txt) txt.textContent = ok ? '正常' : '異常';
+    if(icon){
+      icon.textContent = ok ? '✓' : '!';
+      icon.style.color = ok ? '#fff' : '#ffd1d1';
+      icon.style.borderColor = ok ? 'rgba(255,255,255,.95)' : '#ffd1d1';
+    }
+  }
+
+  function renderHealth(dev){
+    const bar = $('#healthBar');
+    const txt = $('#healthText');
+    if(!bar || !txt) return;
+
+    const stdSec = Number(dev && dev.hhStdSec || 0);
+    const lastSec = Number(dev && dev.hhLastSec || 0);
+    const cnt = Number(dev && dev.hhCount || 0);
+    const pct = Math.max(0, Math.min(100, Number(dev && dev.hhPct || 0)));
+
+    if (stdSec > 0 && lastSec > 0){
+      bar.style.width = pct + '%';
+      bar.style.background = (pct < 60) ? '#d25a5a' : 'var(--teal)';
+      txt.textContent = pct + '%';
+      setHealthOkIcon(pct >= 60);
+      return;
+    }
+
+    const progress = Math.max(0, Math.min(10, cnt));
+    const w = (progress / 10) * 100;
+    bar.style.width = w + '%';
+    bar.style.background = '#5b95cd';
+    txt.textContent = (progress < 10)
+      ? (progress + '/10 建立標準中')
+      : (progress + '/10');
+    setHealthOkIcon(true);
+  }
+
+  async function refreshStatus(){
+    showMsg('讀取產品狀態中...', false);
+    try{
+      const statusTask = smartFetch('/api/devstatus?_=' + Date.now(), {cache:'no-store'}, {ap:900, ip:1800});
+      const costTask = smartFetch('/api/powerlog?_=' + Date.now(), {cache:'no-store'}, {ap:900, ip:1800});
+
+      const status = await statusTask;
+      const dev = await status.res.json().catch(()=>null);
+      if(!dev || !dev.valid) throw new Error('設備尚未回傳狀態');
+
+      const raw = Number(dev.raw || 0) & 0xFF;
+      const errCount = renderFaults(raw);
+      renderRunState(errCount);
+      renderHealth(dev);
+
+      try{
+        const cost = await costTask;
+        const pg = await cost.res.json().catch(()=>null);
+        if(pg && pg.ok){
+          renderCost(getCurrentMonthSec(pg));
+        }
+      }catch(e){}
+
+      showMsg('產品狀態已更新', false);
+    }catch(e){
+      showMsg('無法讀取產品狀態：' + (e && e.message ? e.message : e), true);
+    }
+  }
+
+  $('#backBtn')?.addEventListener('click', ()=>{
+    if(history.length > 1){ history.back(); return; }
+    location.href = './index.html';
+  });
+
+  $('#powerDetailBtn')?.addEventListener('click', ()=>{
+    location.href = './powerlog.html';
+  });
+
+  // 校正電熱管健康度基準：清零前10次計算，邏輯在設備端。
+  $('#calibrateBtn')?.addEventListener('click', async ()=>{
+    const confirmed = await openResetConfirm();
+    if(!confirmed) return;
+
+    showMsg('校正中...', false);
+    try{
+      await smartFetch('/api/hhreset', {method:'POST', cache:'no-store'}, {ap:900, ip:1800});
+      showMsg('電熱管健康校正完成（10次重新累積）', false);
+      await refreshStatus();
+    }catch(e){
+      showMsg('校正失敗：' + (e && e.message ? e.message : e), true);
+    }
+  });
+
+  refreshStatus();
+  setInterval(()=>{
+    if(document.visibilityState !== 'visible') return;
+    refreshStatus();
+  }, 10000);
+})();
+</script>
+</body>
+</html>

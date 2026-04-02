@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "get-latest-commit-msg",
+            "type": "shell",
+            "command": "git log -1 --pretty=%B > .latest_commit_msg.txt",
+            "problemMatcher": []
+        },
+        {
+            "label": "bump-version-auto",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "bump-version.ps1",
+                "$(cat .latest_commit_msg.txt)"
+            ],
+            "dependsOn": ["get-latest-commit-msg"],
+            "problemMatcher": []
+        },
+        {
+            "label": "git-add",
+            "type": "shell",
+            "command": "git add .",
+            "dependsOn": ["bump-version-auto"],
+            "problemMatcher": []
+        },
+        {
+            "label": "git-commit-auto",
+            "type": "shell",
+            "command": "git commit --amend --no-edit",
+            "dependsOn": ["git-add"],
+            "problemMatcher": []
+        },
+        {
+            "label": "git-push",
+            "type": "shell",
+            "command": "git push --force",
+            "dependsOn": ["git-commit-auto"],
+            "problemMatcher": []
+        },
+        {
+            "label": "一鍵全自動版次+備註+推送",
+            "dependsOn": ["get-latest-commit-msg", "bump-version-auto", "git-add", "git-commit-auto", "git-push"],
+            "problemMatcher": []
+        }
+    ]
+}
